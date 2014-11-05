@@ -15,7 +15,7 @@
 #define lcd_puth(par1) lcd_puti_lc(par1, 16, 0, 0)
 
 // initialize lcd
-void lcd_init(void);
+uint8_t lcd_init(void);
 
 // clear lcd
 void lcd_clear(void);

@@ -97,25 +97,13 @@ uint8_t lcd_available(void)	// returns 0(false) on timeout and 1-20(true) on lcd
 	return i;
 }
 
-uint8_t lcd_command(const uint8_t cmd)
+uint8_t lcd_wr(const uint8_t d, const uint8_t rs)
 {
 	if( pcfErr ) return 0;
 
 	if( lcd_available() ) {
-		lcd_out(cmd, 0);
-		lcd_out(cmd << 4, 0);
-		return 1;
-	}
-	return 0;
-}
-
-uint8_t lcd_data(const uint8_t data)
-{
-	if( pcfErr ) return 0;
-
-	if( lcd_available() ) {
-		lcd_out(data, 1);
-		lcd_out(data << 4, 1);
+		lcd_out(d, rs);
+		lcd_out(d << 4, rs);
 		return 1;
 	}
 	return 0;
@@ -124,31 +112,24 @@ uint8_t lcd_data(const uint8_t data)
 // lcd backlight
 void lcd_bl(uint8_t on)
 {
-	if( on ) {
-		LCD_BL_PORT |= _BV(LCD_BL_BIT);
-	} else {
-		LCD_BL_PORT &= ~_BV(LCD_BL_BIT);
-	}
-
-	if( pcfAdr == 0x40 ) on = !on;
 	pcfBit(LCD_BL_PCF_BIT, on);
 }
 
 // initialize lcd interface
-void lcd_hwinit(void)
+uint8_t lcd_hwinit(void)
 {
 	i2c_init(I2C_100K);
 
-	pcfAdr = 0x40;
-	if( i2c_readbuf(pcfAdr, 0, 0) )  pcfAdr = 0x42;
+	//lcd_bl(0);		// backlight off
+	pcfWrite(pcfLast & _BV(LCD_BL_PCF_BIT)); // set all zeros except BL bit
+	//LCD_E_0;			// idle E is low
 
-	pcfWrite(0);
-	lcd_bl(0);			// backlight off
-	LCD_E_0;			// idle E is low
+	return pcfErr;
+}
 
-	// make LCD BL pin an output
-	DDR(LCD_BL_PORT) |= _BV(LCD_BL_BIT);
-	LCD_BL_PORT &= ~_BV(LCD_BL_BIT);
-
-	pcfErr = 0;
+// set pcf8574 address (if different from default 0x40)
+uint8_t lcd_pcfadr(uint8_t a)
+{
+	if( a ) pcfAdr = a;
+	return pcfAdr;
 }

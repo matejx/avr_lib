@@ -17,11 +17,13 @@
 // --- procedures implemented by lcd_[intf].c -------------------------
 // ------------------------------------------------------------------
 
-extern uint8_t lcd_busw;
-void lcd_hwinit(void);
+extern const uint8_t lcd_busw;
+uint8_t lcd_hwinit(void);
 void lcd_out(const uint8_t data, const uint8_t rs);
-uint8_t lcd_command(const uint8_t cmd);
-uint8_t lcd_data(const uint8_t data);
+uint8_t lcd_wr(const uint8_t d, const uint8_t rs);
+
+#define lcd_command(par1) lcd_wr(par1, 0)
+#define lcd_data(par1) lcd_wr(par1, 1)
 
 // ------------------------------------------------------------------
 // --- private procedures -------------------------------------------
@@ -51,9 +53,10 @@ void lcd_clear(void)
 }
 
 // initialize lcd
-void lcd_init(void)
+uint8_t lcd_init(void)
 {
-	lcd_hwinit();
+	uint8_t r = lcd_hwinit();
+	if( r ) return r;
 #ifndef LCD_SIMPLE_INIT
 	lcd_out(0x30, 0);	// 8 bit interface
 	_delay_ms(5);
@@ -68,6 +71,8 @@ void lcd_init(void)
 	lcd_clear();
 	lcd_command(0x06);  // cursor increment
 	lcd_command(0x08 | 0x04); // display on
+
+	return 0;
 }
 
 // position lcd cursor to line y, character x (both zero based)

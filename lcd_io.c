@@ -19,7 +19,12 @@
 // --- defines ------------------------------------------------------
 // ------------------------------------------------------------------
 
+#ifdef LCD_D0_BIT
 const uint8_t lcd_busw = 0x10;
+#else
+const uint8_t lcd_busw = 0;
+#warning LCD using 4 bit interface
+#endif
 
 #define LCD_RS_1 LCD_RS_PORT |= _BV(LCD_RS_PIN)
 #define LCD_RS_0 LCD_RS_PORT &= ~_BV(LCD_RS_PIN)
@@ -30,6 +35,8 @@ const uint8_t lcd_busw = 0x10;
 #define LCD_E_1 LCD_E_PORT |= _BV(LCD_E_PIN)
 #define LCD_E_0 LCD_E_PORT &= ~_BV(LCD_E_PIN)
 
+#define LCD_DELAY_US 10
+
 // ------------------------------------------------------------------
 // --- private procedures -------------------------------------------
 // ------------------------------------------------------------------
@@ -37,32 +44,38 @@ const uint8_t lcd_busw = 0x10;
 void lcd_ddir(uint8_t out)
 {
 	if( out ) {
+#ifdef LCD_D0_BIT
 		DDR(LCD_D0_PORT) |= _BV(LCD_D0_BIT);
 		DDR(LCD_D1_PORT) |= _BV(LCD_D1_BIT);
 		DDR(LCD_D2_PORT) |= _BV(LCD_D2_BIT);
 		DDR(LCD_D3_PORT) |= _BV(LCD_D3_BIT);
+#endif
 		DDR(LCD_D4_PORT) |= _BV(LCD_D4_BIT);
 		DDR(LCD_D5_PORT) |= _BV(LCD_D5_BIT);
 		DDR(LCD_D6_PORT) |= _BV(LCD_D6_BIT);
 		DDR(LCD_D7_PORT) |= _BV(LCD_D7_BIT);
 	} else {
+#ifdef LCD_D0_BIT
 		DDR(LCD_D0_PORT) &= ~_BV(LCD_D0_BIT);
 		DDR(LCD_D1_PORT) &= ~_BV(LCD_D1_BIT);
 		DDR(LCD_D2_PORT) &= ~_BV(LCD_D2_BIT);
 		DDR(LCD_D3_PORT) &= ~_BV(LCD_D3_BIT);
+#endif
 		DDR(LCD_D4_PORT) &= ~_BV(LCD_D4_BIT);
 		DDR(LCD_D5_PORT) &= ~_BV(LCD_D5_BIT);
 		DDR(LCD_D6_PORT) &= ~_BV(LCD_D6_BIT);
-		DDR(LCD_D7_PORT) &= ~_BV(LCD_D7_BIT);		
+		DDR(LCD_D7_PORT) &= ~_BV(LCD_D7_BIT);
 	}
 }
 
 void lcd_dout(uint8_t data)
 {
+#ifdef LCD_D0_BIT
 	if( data & 0x01 ) LCD_D0_PORT |= _BV(LCD_D0_BIT); else LCD_D0_PORT &= ~_BV(LCD_D0_BIT);
 	if( data & 0x02 ) LCD_D1_PORT |= _BV(LCD_D1_BIT); else LCD_D1_PORT &= ~_BV(LCD_D1_BIT);
 	if( data & 0x04 ) LCD_D2_PORT |= _BV(LCD_D2_BIT); else LCD_D2_PORT &= ~_BV(LCD_D2_BIT);
 	if( data & 0x08 ) LCD_D3_PORT |= _BV(LCD_D3_BIT); else LCD_D3_PORT &= ~_BV(LCD_D3_BIT);
+#endif
 	if( data & 0x10 ) LCD_D4_PORT |= _BV(LCD_D4_BIT); else LCD_D4_PORT &= ~_BV(LCD_D4_BIT);
 	if( data & 0x20 ) LCD_D5_PORT |= _BV(LCD_D5_BIT); else LCD_D5_PORT &= ~_BV(LCD_D5_BIT);
 	if( data & 0x40 ) LCD_D6_PORT |= _BV(LCD_D6_BIT); else LCD_D6_PORT &= ~_BV(LCD_D6_BIT);
@@ -72,10 +85,12 @@ void lcd_dout(uint8_t data)
 uint8_t lcd_din(void)
 {
 	uint8_t r = 0;
+#ifdef LCD_D0_BIT
 	if( PIN(LCD_D0_PORT) & _BV(LCD_D0_BIT) ) r |= 0x01;
 	if( PIN(LCD_D1_PORT) & _BV(LCD_D1_BIT) ) r |= 0x02;
 	if( PIN(LCD_D2_PORT) & _BV(LCD_D2_BIT) ) r |= 0x04;
 	if( PIN(LCD_D3_PORT) & _BV(LCD_D3_BIT) ) r |= 0x08;
+#endif
 	if( PIN(LCD_D4_PORT) & _BV(LCD_D4_BIT) ) r |= 0x10;
 	if( PIN(LCD_D5_PORT) & _BV(LCD_D5_BIT) ) r |= 0x20;
 	if( PIN(LCD_D6_PORT) & _BV(LCD_D6_BIT) ) r |= 0x40;
@@ -91,9 +106,9 @@ void lcd_out(uint8_t data, uint8_t rs)
 	lcd_ddir(1);
 	lcd_dout(data);
 	LCD_E_1;				// E high
-	_delay_us(2);
+	_delay_us(LCD_DELAY_US);
 	LCD_E_0;				// high to low on E to clock data
-	_delay_us(2);
+	_delay_us(LCD_DELAY_US);
 }
 
 // reads instruction or data from LCD
@@ -104,11 +119,11 @@ uint8_t lcd_in(uint8_t rs)
 	if( rs ) {LCD_RS_1;} else {LCD_RS_0;}	// select instruction/data
 	LCD_RW_1;		// RW high (read)
 	LCD_E_1;
-	_delay_us(2);
+	_delay_us(LCD_DELAY_US);
 	uint8_t r = lcd_din();
 	LCD_E_0;
-	_delay_us(2);
-	
+	_delay_us(LCD_DELAY_US);
+
 	return r;
 }
 
@@ -129,25 +144,17 @@ uint8_t lcd_available(void)
 	return i;
 }
 
-// write command to lcd
-uint8_t lcd_command(uint8_t data)
+// write to lcd
+uint8_t lcd_wr(const uint8_t d, const uint8_t rs)
 {
 	if( lcd_available() ) {
-		lcd_out(data, 0);
+		lcd_out(d, rs);
+#ifndef LCD_D0_BIT
+		lcd_out(d << 4, rs);
+#endif
 		return 1;
 	}
-	
-	return 0;
-}
 
-// write data to lcd
-uint8_t lcd_data(uint8_t data)
-{
-	if( lcd_available() ) {
-		lcd_out(data, 1);
-		return 1;
-	}
-	
 	return 0;
 }
 
@@ -160,16 +167,18 @@ void lcd_bl(uint8_t on)
 	}
 }
 
-void lcd_hwinit(void)
+uint8_t lcd_hwinit(void)
 {
 	LCD_E_0;	// idle E is low
-	
+
 	// configure the 3 LCD control pins as outputs
 	DDR(LCD_RS_PORT) |= _BV(LCD_RS_PIN);
 	DDR(LCD_RW_PORT) |= _BV(LCD_RW_PIN);
 	DDR(LCD_E_PORT) |= _BV(LCD_E_PIN);
-	
+
 	// make LCD BL pin an output
 	DDR(LCD_BL_PORT) |= _BV(LCD_BL_BIT);
-	lcd_bl(0);	
+	lcd_bl(0);
+
+	return 0;
 }

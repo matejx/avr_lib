@@ -10,11 +10,21 @@
 
 #include "spi.h"
 #include "swdefs.h"
+#include "hwdefs.h"
 
 #ifdef SPI_USE_CMT
 	#warning SPI using cmt
 	#include "cmt.h"
 	struct cmt_mutex spi_mutex;
+#endif
+
+#ifndef SPCR0
+	#define SPCR0 SPCR
+	#define SPE0 SPE
+	#define MSTR0 MSTR
+	#define SPSR0 SPSR
+	#define SPDR0 SPDR
+	#define SPIF0 SPIF
 #endif
 
 void spi_init(uint8_t fdiv)
