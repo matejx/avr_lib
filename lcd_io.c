@@ -23,7 +23,6 @@
 const uint8_t lcd_busw = 0x10;
 #else
 const uint8_t lcd_busw = 0;
-#warning LCD using 4 bit interface
 #endif
 
 #define LCD_RS_1 LCD_RS_PORT |= _BV(LCD_RS_PIN)
@@ -35,7 +34,7 @@ const uint8_t lcd_busw = 0;
 #define LCD_E_1 LCD_E_PORT |= _BV(LCD_E_PIN)
 #define LCD_E_0 LCD_E_PORT &= ~_BV(LCD_E_PIN)
 
-#define LCD_DELAY_US 10
+#define LCD_DELAY_US 2
 
 // ------------------------------------------------------------------
 // --- private procedures -------------------------------------------
@@ -123,6 +122,12 @@ uint8_t lcd_in(uint8_t rs)
 	uint8_t r = lcd_din();
 	LCD_E_0;
 	_delay_us(LCD_DELAY_US);
+#ifndef LCD_D0_BIT
+	LCD_E_1;
+	_delay_us(LCD_DELAY_US);
+	LCD_E_0;
+	_delay_us(LCD_DELAY_US);
+#endif
 
 	return r;
 }
@@ -145,7 +150,7 @@ uint8_t lcd_available(void)
 }
 
 // write to lcd
-uint8_t lcd_wr(const uint8_t d, const uint8_t rs)
+uint8_t lcd_wr(uint8_t d, uint8_t rs)
 {
 	if( lcd_available() ) {
 		lcd_out(d, rs);

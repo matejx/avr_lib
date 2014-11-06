@@ -16,19 +16,14 @@
 
 const uint8_t lcd_busw = 0;
 
-#define LCD_DELAY asm("nop\nnop\nnop\nnop\n")
-
-#define LCD_BUSY_PCF_BIT 3
-#define LCD_BL_PCF_BIT 7
-
-#define LCD_RS_1 pcfBit(4, 1)
-#define LCD_RS_0 pcfBit(4, 0)
-
-#define LCD_RW_1 pcfBit(5, 1)
-#define LCD_RW_0 pcfBit(5, 0)
-
-#define LCD_E_1 pcfBit(6, 1)
-#define LCD_E_0 pcfBit(6, 0)
+#define PCF_D4 _BV(0)
+#define PCF_D5 _BV(1)
+#define PCF_D6 _BV(2)
+#define PCF_D7 _BV(3)
+#define PCF_RS _BV(4)
+#define PCF_RW _BV(5)
+#define PCF_EN _BV(6)
+#define PCF_BL _BV(7)
 
 // ------------------------------------------------------------------
 // --- private procedures -------------------------------------------
@@ -51,53 +46,50 @@ uint8_t pcfRead(void)
 	return r;
 }
 
-void pcfBit(const uint8_t bit, const uint8_t on)
+void pcfBits(uint8_t d, uint8_t on)
 {
 	if( on ) {
-		pcfWrite(pcfLast | _BV(bit));
+		pcfWrite(pcfLast | d);
 	} else {
-		pcfWrite(pcfLast & ~_BV(bit));
+		pcfWrite(pcfLast & ~d);
 	}
 }
 
-void lcd_out(const uint8_t data, const uint8_t rs)
+void lcd_out(uint8_t data, uint8_t rs)
 {
-	LCD_E_1;				// E high
-	if( rs ) {LCD_RS_1;} else {LCD_RS_0;}	// select instruction(0) or data(1)
-	LCD_RW_0;				// RW low (write)
-	pcfWrite((pcfLast & 0xf0) | (data >> 4));		// set data pins
-	LCD_DELAY;
-	LCD_E_0;				// high to low on E to clock data
-}
-
-uint8_t lcd_in(const uint8_t rs)
-{
-	if( rs ) {LCD_RS_1;} else {LCD_RS_0;}	// select instruction/data
-	LCD_RW_1;					// RW high (read)
-	LCD_E_1;
-	LCD_DELAY;
-	uint8_t c = pcfRead() & 0x0f;
-	LCD_E_0;
-
-	return c;
+/*
+	uint8_t d = 0;
+	if( data & 0x80 ) d |= PCF_D7;
+	if( data & 0x40 ) d |= PCF_D6;
+	if( data & 0x20 ) d |= PCF_D5;
+	if( data & 0x10 ) d |= PCF_D4;
+*/
+	if( rs ) rs = PCF_RS;
+	pcfWrite((pcfLast & PCF_BL) | PCF_EN | rs | (data >> 4));
+	pcfBits(PCF_EN, 0);
 }
 
 uint8_t lcd_busy(void)
 {
-	pcfBit(LCD_BUSY_PCF_BIT, 1);
-	return (lcd_in(0) & _BV(LCD_BUSY_PCF_BIT));
+	pcfWrite((pcfLast & PCF_BL) | PCF_RW | PCF_D4 | PCF_D5 | PCF_D6 | PCF_D7);
+	pcfBits(PCF_EN, 1);
+	uint8_t r = pcfRead() & PCF_D7;
+	pcfBits(PCF_EN, 0);
+	pcfBits(PCF_EN, 1);
+	pcfBits(PCF_EN, 0);
+	return r;
 }
 
 uint8_t lcd_available(void)	// returns 0(false) on timeout and 1-20(true) on lcd available
 {
 	uint8_t i = 10;			// wait max 10ms
-	while ( lcd_busy() && i ) {
+	while ( lcd_busy() && i ) { // lcd_busy takes cca. 1.2ms on 100kHz i2c bus
 		i--;
 	}
 	return i;
 }
 
-uint8_t lcd_wr(const uint8_t d, const uint8_t rs)
+uint8_t lcd_wr(uint8_t d, uint8_t rs)
 {
 	if( pcfErr ) return 0;
 
@@ -112,7 +104,7 @@ uint8_t lcd_wr(const uint8_t d, const uint8_t rs)
 // lcd backlight
 void lcd_bl(uint8_t on)
 {
-	pcfBit(LCD_BL_PCF_BIT, on);
+	pcfBits(PCF_BL, on);
 }
 
 // initialize lcd interface
@@ -121,7 +113,7 @@ uint8_t lcd_hwinit(void)
 	i2c_init(I2C_100K);
 
 	//lcd_bl(0);		// backlight off
-	pcfWrite(pcfLast & _BV(LCD_BL_PCF_BIT)); // set all zeros except BL bit
+	pcfWrite(pcfLast & PCF_BL); // set all zeros except BL bit
 	//LCD_E_0;			// idle E is low
 
 	return pcfErr;

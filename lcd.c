@@ -19,10 +19,10 @@
 
 extern const uint8_t lcd_busw;
 uint8_t lcd_hwinit(void);
-void lcd_out(const uint8_t data, const uint8_t rs);
-uint8_t lcd_wr(const uint8_t d, const uint8_t rs);
+void lcd_out(uint8_t data, uint8_t rs);
+uint8_t lcd_wr(uint8_t d, uint8_t rs);
 
-#define lcd_command(par1) lcd_wr(par1, 0)
+#define lcd_cmd(par1) lcd_wr(par1, 0)
 #define lcd_data(par1) lcd_wr(par1, 1)
 
 // ------------------------------------------------------------------
@@ -43,7 +43,7 @@ static uint8_t lcd_cur;
 // clear lcd
 void lcd_clear(void)
 {
-	lcd_command(1);
+	lcd_cmd(1);
 	lcd_cur = 0;
 
 #ifdef LCD_USE_FB
@@ -66,11 +66,11 @@ uint8_t lcd_init(void)
 	_delay_ms(1);
 	lcd_out(0x20 | lcd_busw, 0);
 #endif
-	lcd_command(0x28 | lcd_busw);	// 2 lines, 5x7 dots
-	lcd_command(0x08);  // display off, cursor off, blink off
+	lcd_cmd(0x28 | lcd_busw);	// 2 lines, 5x7 dots
+	lcd_cmd(0x08);  // display off, cursor off, blink off
 	lcd_clear();
-	lcd_command(0x06);  // cursor increment
-	lcd_command(0x08 | 0x04); // display on
+	lcd_cmd(0x06);  // cursor increment
+	lcd_cmd(0x08 | 0x04); // display on
 
 	return 0;
 }
@@ -82,7 +82,7 @@ void lcd_goto(uint8_t x, uint8_t y)
 	lcd_fbc = (0x40 * y) + x;
 #else
 	lcd_cur = (0x40 * y) + x;
-	lcd_command(0x80 + lcd_cur);
+	lcd_cmd(0x80 + lcd_cur);
 #endif
 
 }
@@ -105,7 +105,7 @@ void lcd_putc(const char c)
 	if( c != lcd_fb[i] ) {
 
 		if( lcd_fbc != lcd_cur ) {
-			lcd_command(0x80 + lcd_fbc);
+			lcd_cmd(0x80 + lcd_fbc);
 			lcd_cur = lcd_fbc;
 		}
 
