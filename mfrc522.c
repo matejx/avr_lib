@@ -26,9 +26,9 @@ void MFRC522_init() {
 }
 
 
-/////////////////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------------------
 // Basic interface functions for communicating with the MFRC522
-/////////////////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------------------
 
 /**
  * Writes a byte to the specified register in the MFRC522 chip.
@@ -170,21 +170,23 @@ byte PCD_CalculateCRC(	byte *data,		///< In: Pointer to the data to transfer to 
 }
 
 
-/////////////////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------------------
 // Functions for manipulating the MFRC522
-/////////////////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------------------
 
 /**
  * Initializes the MFRC522 chip.
  */
-void PCD_Init() {
+byte PCD_Init() {
 	if ( 0 == (MFRC522_RST_PORT & _BV(MFRC522_RST_BIT)) ) { //The MFRC522 chip is in power down mode.
 		MFRC522_RST_PORT |= _BV(MFRC522_RST_BIT);	// Exit power down mode. This triggers a hard reset.
 		// Section 8.8.2 in the datasheet says the oscillator start-up time is the start up time of the crystal + 37,74µs. Let us be generous: 50ms.
 		_delay_ms(50);
 	}
 	else { // Perform a soft reset
-		PCD_Reset();
+		if( STATUS_OK != PCD_Reset() ) {
+			return STATUS_TIMEOUT;
+		}
 	}
 	// When communicating with a PICC we need a timeout if something goes wrong.
 	// f_timer = 13.56 MHz / (2*TPreScaler+1) where TPreScaler = [TPrescaler_Hi:TPrescaler_Lo].
@@ -197,21 +199,28 @@ void PCD_Init() {
 	PCD_WriteRegister(TxASKReg, 0x40);		// Default 0x00. Force a 100 % ASK modulation independent of the ModGsPReg register setting
 	PCD_WriteRegister(ModeReg, 0x3D);		// Default 0x3F. Set the preset value for the CRC coprocessor for the CalcCRC command to 0x6363 (ISO 14443-3 part 6.2.4)
 	PCD_AntennaOn();						// Enable the antenna driver pins TX1 and TX2 (they were disabled by the reset)
+
+	return STATUS_OK;
 }
 
 /**
  * Performs a soft reset on the MFRC522 chip and waits for it to be ready again.
  */
-void PCD_Reset() {
+byte PCD_Reset() {
 	PCD_WriteRegister(CommandReg, PCD_SoftReset);	// Issue the SoftReset command.
 	// The datasheet does not mention how long the SoftRest command takes to complete.
 	// But the MFRC522 might have been in soft power-down mode (triggered by bit 4 of CommandReg)
 	// Section 8.8.2 in the datasheet says the oscillator start-up time is the start up time of the crystal + 37,74µs. Let us be generous: 50ms.
 	_delay_ms(50);
 	// Wait for the PowerDown bit in CommandReg to be cleared
+	word i = 5000;
 	while (PCD_ReadRegister(CommandReg) & (1<<4)) {
 		// PCD still restarting - unlikely after waiting 50ms, but better safe than sorry.
+		if( --i == 0 ) {
+			return STATUS_TIMEOUT;
+		}
 	}
+	return STATUS_OK;
 }
 
 /**
@@ -225,9 +234,9 @@ void PCD_AntennaOn() {
 	}
 }
 
-/////////////////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------------------
 // Functions for communicating with PICCs
-/////////////////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------------------
 
 /**
  * Executes the Transceive command.
@@ -659,9 +668,9 @@ byte PICC_HaltA() {
 }
 
 
-/////////////////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------------------
 // Functions for communicating with MIFARE PICCs
-/////////////////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------------------
 
 /**
  * Executes the MFRC522 MFAuthent command.
@@ -921,9 +930,9 @@ byte MIFARE_Transfer(	byte blockAddr ///< The block (0-0xff) number.
 }
 */
 
-/////////////////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------------------
 // Support functions
-/////////////////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------------------
 
 /**
  * Wrapper for MIFARE protocol communication.
@@ -1342,9 +1351,9 @@ void MIFARE_SetAccessBits(	byte *accessBitBuffer,	///< Pointer to byte 6, 7 and 
 }
 */
 
-/////////////////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------------------
 // Convenience functions - does not add extra functionality
-/////////////////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------------------
 
 /**
  * Returns true if a PICC responds to PICC_CMD_REQA.
