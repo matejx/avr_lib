@@ -14,6 +14,6 @@
 void spi_init(uint8_t fdiv);
 
 // send a byte over SPI
-uint8_t spi_write(uint8_t d);
+uint8_t spi_rw(uint8_t d);
 
 #endif

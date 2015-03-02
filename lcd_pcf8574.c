@@ -8,6 +8,7 @@
 #include <avr/io.h>
 
 #include "hwdefs.h"
+#include "swdefs.h"
 #include "i2c.h"
 
 // ------------------------------------------------------------------
@@ -29,31 +30,9 @@ const uint8_t lcd_busw = 0;
 // --- private procedures -------------------------------------------
 // ------------------------------------------------------------------
 
-static uint8_t pcfLast;
+static uint8_t pcfBlb;
 static uint8_t pcfErr = 1;
 static uint8_t pcfAdr = 0x40;
-
-void pcfWrite(uint8_t d)
-{
-	pcfErr = i2c_writebuf(pcfAdr , &d, 1);
-	pcfLast = d;
-}
-
-uint8_t pcfRead(void)
-{
-	uint8_t r;
-	pcfErr = i2c_readbuf(pcfAdr, &r, 1);
-	return r;
-}
-
-void pcfBits(uint8_t d, uint8_t on)
-{
-	if( on ) {
-		pcfWrite(pcfLast | d);
-	} else {
-		pcfWrite(pcfLast & ~d);
-	}
-}
 
 void lcd_out(uint8_t data, uint8_t rs)
 {
@@ -65,26 +44,30 @@ void lcd_out(uint8_t data, uint8_t rs)
 	if( data & 0x10 ) d |= PCF_D4;
 */
 	if( rs ) rs = PCF_RS;
-	pcfWrite((pcfLast & PCF_BL) | PCF_EN | rs | (data >> 4));
-	pcfBits(PCF_EN, 0);
+	uint8_t d[2];
+	d[1] = pcfBlb | rs | (data >> 4);
+	d[0] = d[1] | PCF_EN;
+	pcfErr = i2c_writebuf(pcfAdr , d, 2);
 }
 
 uint8_t lcd_busy(void)
 {
-	pcfWrite((pcfLast & PCF_BL) | PCF_RW | PCF_D4 | PCF_D5 | PCF_D6 | PCF_D7);
-	pcfBits(PCF_EN, 1);
-	uint8_t r = pcfRead() & PCF_D7;
-	pcfBits(PCF_EN, 0);
-	pcfBits(PCF_EN, 1);
-	pcfBits(PCF_EN, 0);
-	return r;
+	uint8_t r;
+	uint8_t d[3];
+	d[0] = pcfBlb | PCF_RW | PCF_D4 | PCF_D5 | PCF_D6 | PCF_D7;
+	d[1] = d[0] | PCF_EN;
+	d[2] = d[0];
+	i2c_writebuf(pcfAdr , d, 2);
+	i2c_readbuf(pcfAdr, &r, 1);
+	pcfErr = i2c_writebuf(pcfAdr , d, 3);
+	return r & PCF_D7;
 }
 
 uint8_t lcd_available(void)	// returns 0(false) on timeout and 1-20(true) on lcd available
 {
 	uint8_t i = 10;			// wait max 10ms
 	while ( lcd_busy() && i ) { // lcd_busy takes cca. 1.2ms on 100kHz i2c bus
-		i--;
+		--i;
 	}
 	return i;
 }
@@ -104,24 +87,26 @@ uint8_t lcd_wr(uint8_t d, uint8_t rs)
 // lcd backlight
 void lcd_bl(uint8_t on)
 {
-	pcfBits(PCF_BL, on);
+	pcfBlb = on ? PCF_BL : 0;
+	pcfErr = i2c_writebuf(pcfAdr , &pcfBlb, 1);
 }
 
 // initialize lcd interface
-uint8_t lcd_hwinit(void)
+uint8_t lcd_hwinit(uint8_t p1)
 {
+#ifdef LCD_I2C_SPEED
+	i2c_init(LCD_I2C_SPEED);
+#else
+	#warning LCD using I2C_100K
 	i2c_init(I2C_100K);
+#endif
 
-	//lcd_bl(0);		// backlight off
-	pcfWrite(pcfLast & PCF_BL); // set all zeros except BL bit
-	//LCD_E_0;			// idle E is low
-
-	return pcfErr;
+	pcfAdr = p1;
+	return i2c_writebuf(pcfAdr , &pcfBlb, 1); // set all zeros except BL bit
 }
 
 // set pcf8574 address (if different from default 0x40)
-uint8_t lcd_pcfadr(uint8_t a)
+uint8_t lcd_pcfadr(void)
 {
-	if( a ) pcfAdr = a;
 	return pcfAdr;
 }

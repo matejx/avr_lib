@@ -7,10 +7,28 @@
 #ifndef MAT_SERIALQ_H
 #define MAT_SERIALQ_H
 
+#if F_CPU == 3686400
+	#define BAUD_9600 23
+	#define BAUD_19200 11
+	#define BAUD_115200 1
+#endif
+
+#if F_CPU == 7372800
+	#define BAUD_9600 47
+	#define BAUD_19200 23
+	#define BAUD_115200 3
+#endif
+
 #if F_CPU == 8000000
 	#define BAUD_9600 51
 	#define BAUD_19200 25
 	#define BAUD_38400 12
+#endif
+
+#if F_CPU == 11059200
+	#define BAUD_9600 71
+	#define BAUD_19200 35
+	#define BAUD_115200 5
 #endif
 
 #if F_CPU == 16000000

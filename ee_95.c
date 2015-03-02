@@ -47,15 +47,15 @@ void ee95_wp(uint8_t a) {
 void ee95_wren(void)
 {
 	ee95_cs(1);
-	spi_write(0x06);	// WREN
+	spi_rw(0x06);	// WREN
 	ee95_cs(0);
 }
 
 uint8_t ee95_rdsr(void)
 {
 	ee95_cs(1);
-	spi_write(0x05);	// RDSR
-	uint8_t sr = spi_write(0);
+	spi_rw(0x05);	// RDSR
+	uint8_t sr = spi_rw(0);
 	ee95_cs(0);
 	return sr;
 }
@@ -83,11 +83,11 @@ void ee95_rd(uint16_t adr, uint8_t* buf, uint16_t len)
 {
 	ee95_cs(1);
 
-	spi_write( ((adr >> 5) & 0x18) | 0x03 ); // READ instruction containing A9 and A8
-	spi_write( adr & 0xff ); // address A7..A0
+	spi_rw( ((adr >> 5) & 0x18) | 0x03 ); // READ instruction containing A9 and A8
+	spi_rw( adr & 0xff ); // address A7..A0
 
 	while( len ) {
-		*buf = spi_write(0);
+		*buf = spi_rw(0);
 		++buf;
 		--len;
 	}
@@ -103,9 +103,9 @@ void ee95_wr(uint16_t adr, uint8_t d)
 	ee95_wren();
 
 	ee95_cs(1);
-	spi_write( ((adr >> 5) & 0x18) | 0x02 ); // WRITE instruction containing A9 and A8
-	spi_write( adr & 0xff ); // address A7..A0
-	spi_write(d);
+	spi_rw( ((adr >> 5) & 0x18) | 0x02 ); // WRITE instruction containing A9 and A8
+	spi_rw( adr & 0xff ); // address A7..A0
+	spi_rw(d);
 	ee95_cs(0);
 
 	ee95_wp(1);

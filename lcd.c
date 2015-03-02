@@ -18,7 +18,7 @@
 // ------------------------------------------------------------------
 
 extern const uint8_t lcd_busw;
-uint8_t lcd_hwinit(void);
+uint8_t lcd_hwinit(uint8_t p1);
 void lcd_out(uint8_t data, uint8_t rs);
 uint8_t lcd_wr(uint8_t d, uint8_t rs);
 
@@ -53,9 +53,9 @@ void lcd_clear(void)
 }
 
 // initialize lcd
-uint8_t lcd_init(void)
+uint8_t lcd_init(uint8_t p1)
 {
-	uint8_t r = lcd_hwinit();
+	uint8_t r = lcd_hwinit(p1);
 	if( r ) return r;
 #ifndef LCD_SIMPLE_INIT
 	lcd_out(0x30, 0);	// 8 bit interface

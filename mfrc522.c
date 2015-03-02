@@ -38,8 +38,8 @@ void PCD_WriteRegister(	byte reg,		///< The register to write to. One of the PCD
 						byte value		///< The value to write.
 ) {
 	SPI_CS_LOW;							// Select slave
-	spi_write(reg & 0x7E);				// MSB == 0 is for writing. LSB is not used in address. Datasheet section 8.1.2.3.
-	spi_write(value);
+	spi_rw(reg & 0x7E);				// MSB == 0 is for writing. LSB is not used in address. Datasheet section 8.1.2.3.
+	spi_rw(value);
 	SPI_CS_HIGH;						// Release slave again
 }
 
@@ -52,9 +52,9 @@ void PCD_WriteRegister2(byte reg,		///< The register to write to. One of the PCD
 						byte *values	///< The values to write. Byte array.
 ) {
 	SPI_CS_LOW;							// Select slave
-	spi_write(reg & 0x7E);				// MSB == 0 is for writing. LSB is not used in address. Datasheet section 8.1.2.3.
+	spi_rw(reg & 0x7E);				// MSB == 0 is for writing. LSB is not used in address. Datasheet section 8.1.2.3.
 	for (byte index = 0; index < count; index++) {
-		spi_write(values[index]);
+		spi_rw(values[index]);
 	}
 	SPI_CS_HIGH;						// Release slave again
 }
@@ -67,8 +67,8 @@ byte PCD_ReadRegister(byte reg			///< The register to read from. One of the PCD_
 ) {
 	byte value;
 	SPI_CS_LOW;							// Select slave
-	spi_write(0x80 | (reg & 0x7E));	// MSB == 1 is for reading. LSB is not used in address. Datasheet section 8.1.2.3.
-	value = spi_write(0);				// Read the value back. Send 0 to stop reading.
+	spi_rw(0x80 | (reg & 0x7E));	// MSB == 1 is for reading. LSB is not used in address. Datasheet section 8.1.2.3.
+	value = spi_rw(0);				// Read the value back. Send 0 to stop reading.
 	SPI_CS_HIGH;						// Release slave again
 	return value;
 }
@@ -89,7 +89,7 @@ void PCD_ReadRegister2(	byte reg,		///< The register to read from. One of the PC
 	byte index = 0;							// Index in values array.
 	SPI_CS_LOW;		// Select slave
 	count--;								// One read is performed outside of the loop
-	spi_write(address);					// Tell MFRC522 which address we want to read
+	spi_rw(address);					// Tell MFRC522 which address we want to read
 	while (index < count) {
 		if (index == 0 && rxAlign) { // Only update bit positions rxAlign..7 in values[0]
 			// Create bit mask for bit positions rxAlign..7
@@ -98,16 +98,16 @@ void PCD_ReadRegister2(	byte reg,		///< The register to read from. One of the PC
 				mask |= (1 << i);
 			}
 			// Read value and tell that we want to read the same address again.
-			byte value = spi_write(address);
+			byte value = spi_rw(address);
 			// Apply mask to both current value of values[0] and the new data in value.
 			values[0] = (values[index] & ~mask) | (value & mask);
 		}
 		else { // Normal case
-			values[index] = spi_write(address);	// Read value and tell that we want to read the same address again.
+			values[index] = spi_rw(address);	// Read value and tell that we want to read the same address again.
 		}
 		index++;
 	}
-	values[index] = spi_write(0);			// Read the final byte. Send 0 to stop reading.
+	values[index] = spi_rw(0);			// Read the final byte. Send 0 to stop reading.
 	SPI_CS_HIGH;			// Release slave again
 }
 

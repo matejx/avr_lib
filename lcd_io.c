@@ -172,7 +172,7 @@ void lcd_bl(uint8_t on)
 	}
 }
 
-uint8_t lcd_hwinit(void)
+uint8_t lcd_hwinit(uint8_t p1)
 {
 	LCD_E_0;	// idle E is low
 
