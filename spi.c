@@ -1,8 +1,17 @@
-// ------------------------------------------------------------------
-// --- spi.c - Basic routines for sending data over SPI           ---
-// ---                                                            ---
-// ---                                22.dec.2009, Matej Kogovsek ---
-// ------------------------------------------------------------------
+/**
+
+SPI methods are not interrupt driven - they wait until SPI operation completes.
+If you're using CMT and would prefer switching to another task while SPI operation
+is in progress, you can define SPI_USE_CMT in swdefs.h. This requires CMT_MUTEX_FUNC.
+
+Also, SS (CS) is not controlled by these methods. It's the responsibility of the user.
+
+@file		spi.c
+@brief		SPI routines
+@author		Matej Kogovsek (matej@hamradio.si)
+@copyright	LGPL 2.1
+@note		This file is part of mat-stm32f1-lib
+*/
 
 #include <inttypes.h>
 #include <avr/io.h>
@@ -27,6 +36,14 @@
 	#define SPIF0 SPIF
 #endif
 
+/**
+@brief Initialize SPI interface.
+
+Although SPI can have different clock phase and polarity, I have never ran across anything that uses other
+than low polarity and 1st edge phase. Therefore these parameters are implied and not variable. As are 8 bit
+words and MSB first.
+@param[in]	fdiv		Baudrate prescaler, F_CPU dependent
+*/
 void spi_init(uint8_t fdiv)
 {
 	if( SPCR0 & _BV(SPE0) ) return;
@@ -45,9 +62,11 @@ void spi_init(uint8_t fdiv)
 	SPSR0 = (fdiv >> 2) & 1;
 }
 
-// ------------------------------------------------------------------
-// send a byte over SPI
-
+/**
+@brief Send and receive byte (NSS not controlled)
+@param[in]	d			Byte to send
+@return byte received
+*/
 uint8_t spi_rw(uint8_t d)
 {
 	#ifdef SPI_USE_CMT

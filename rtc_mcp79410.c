@@ -1,8 +1,10 @@
-// ------------------------------------------------------------------
-// --- rtc_mcp79410.c                                             ---
-// --- library for Microchip RTC                                  ---
-// ---                                    coded by Matej Kogovsek ---
-// ------------------------------------------------------------------
+/**
+@file		rtc_mcp79410.c
+@brief		RTC implementation with MCO79410
+@author		Matej Kogovsek (matej@hamradio.si)
+@copyright	LGPL 2.1
+@note		This file is part of mat-avr-lib
+*/
 
 #include <inttypes.h>
 #include <avr/io.h>
@@ -27,7 +29,7 @@ extern void fatal(PGM_P);
 void rtc_error(PGM_P p)
 {
 #ifdef RTC_FATAL_ERR
-	fatal(p); 
+	fatal(p);
 #endif
 }
 
@@ -43,7 +45,7 @@ uint8_t rtc_bcd2dec(const uint8_t b)
 uint8_t rtc_dec2bcd(const uint8_t b)
 {
 	uint8_t d = b / 10;
-	
+
 	return (d << 4) | (b % 10);
 }
 
@@ -98,13 +100,13 @@ void rtc_gettime1(struct rtc_t* t)
 void rtc_gettime(struct rtc_t* t)
 {
 	rtc_gettime1(t);
-	
+
 	if( t->sec == 59 ) {
 		struct rtc_t r;
 		rtc_gettime1(&r);
-		
-		if( t->sec != r.sec ) { 
-			memcpy(t, &r, sizeof(r));	
+
+		if( t->sec != r.sec ) {
+			memcpy(t, &r, sizeof(r));
 		}
 	}
 }
@@ -146,7 +148,7 @@ int8_t rtc_getcal(void)
 	i2c_writebyte(RTC_I2C_ADR, 8);
 	uint8_t c = i2c_readbyte(RTC_I2C_ADR);
 	int8_t r = c & 0x7f;
-	
+
 	if( c & 0x80 ) return -r;
 	return r;
 }

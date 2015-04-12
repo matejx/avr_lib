@@ -1,3 +1,11 @@
+/**
+@file		mfrc522.c
+@brief		MFRC522 Mifare routines
+@author		Matej Kogovsek (matej@hamradio.si)
+@copyright	LGPL 2.1
+@note		This file is part of mat-avr-lib
+@note		This file was not written by me from scratch. It was adapted from code by Miguel Balboa at https://github.com/miguelbalboa/rfid
+*/
 
 #include <util/delay.h>
 #include <string.h>

@@ -1,8 +1,11 @@
-// ------------------------------------------------------------------
-// --- ee95.c - serial EE routines for ST95P08                    ---
-// ---                                                            ---
-// ---                                30.nov.2013, Matej Kogovsek ---
-// ------------------------------------------------------------------
+/**
+@file		ee_95.c
+@brief		ST95P08 EEPROM routines
+@author		Matej Kogovsek (matej@hamradio.si)
+@copyright	LGPL 2.1
+@note		This file is part of mat-avr-lib
+@note		Written for ST95P08. Compatibility with other SPI EE devices unknown.
+*/
 
 #include <inttypes.h>
 #include <avr/io.h>
@@ -10,38 +13,34 @@
 
 #include "spi.h"
 #include "ee95.h"
-
-#define DDR(x) (*(&x - 1))
-#define PIN(x) (*(&x - 2))
+#include "hwdefs.h"
 
 #define EE95_DELAY asm("nop\nnop\nnop\nnop\nnop\n")
 
-// ------------------------------------------------------------------
-// PRIVATE FUNCTIONS
-// ------------------------------------------------------------------
+/** @privatesection */
 
 void ee95_cs(uint8_t a) {
-	SPIEE_DELAY;
+	EE95_DELAY;
 
 	if( a ) {
-		SPIEE_CS_PORT &= ~_BV(SPIEE_CS_BIT);
+		EE95_CS_PORT &= ~_BV(EE95_CS_BIT);
 	} else {
-		SPIEE_CS_PORT |=  _BV(SPIEE_CS_BIT);
+		EE95_CS_PORT |=  _BV(EE95_CS_BIT);
 	}
 
-	SPIEE_DELAY;
+	EE95_DELAY;
 }
 
 void ee95_wp(uint8_t a) {
-	SPIEE_DELAY;
+	EE95_DELAY;
 
 	if( a ) {
-		SPIEE_WP_PORT &= ~_BV(SPIEE_WP_BIT);
+		EE95_WP_PORT &= ~_BV(EE95_WP_BIT);
 	} else {
-		SPIEE_WP_PORT |=  _BV(SPIEE_WP_BIT);
+		EE95_WP_PORT |=  _BV(EE95_WP_BIT);
 	}
 
-	SPIEE_DELAY;
+	EE95_DELAY;
 }
 
 void ee95_wren(void)
@@ -60,25 +59,31 @@ uint8_t ee95_rdsr(void)
 	return sr;
 }
 
-// ------------------------------------------------------------------
-// PUBLIC FUNCTIONS
-// ------------------------------------------------------------------
+/** @publicsection */
 
-void ee95_init(void)
+/**
+@brief Initializes SPI, CS and EE write protect pin
+@param[in]	fdiv	SPI fdiv
+*/
+void ee95_init(uint8_t fdiv)
 {
 	// make CS pin an output and set it high
-	DDR(SPIEE_CS_PORT) |= _BV(SPIEE_CS_BIT);
+	DDR(EE95_CS_PORT) |= _BV(EE95_CS_BIT);
 	ee95_cs(0);
 
 	// make WP pin an output and set it low (protect)
-	DDR(SPIEE_WP_PORT) |= _BV(SPIEE_WP_BIT);
+	DDR(EE95_WP_PORT) |= _BV(EE95_WP_BIT);
 	ee95_wp(1);
 
-	spi_init();
+	spi_init(fdiv);
 }
 
-// ------------------------------------------------------------------
-
+/**
+@brief Read from EE.
+@param[in]	adr		Starting byte address
+@param[out]	buf		Caller provided buffer for data
+@param[in]	len		Number of bytes to read (len <= sizeof(buf))
+*/
 void ee95_rd(uint16_t adr, uint8_t* buf, uint16_t len)
 {
 	ee95_cs(1);
@@ -95,8 +100,12 @@ void ee95_rd(uint16_t adr, uint8_t* buf, uint16_t len)
 	ee95_cs(0);
 }
 
-// ------------------------------------------------------------------
-
+/**
+@brief Write to EE.
+@param[in]	adr		Byte address
+@param[in]	d		Data byte
+@warning Can hang waiting for correct SR.
+*/
 void ee95_wr(uint16_t adr, uint8_t d)
 {
 	ee95_wp(0);
@@ -114,5 +123,3 @@ void ee95_wr(uint16_t adr, uint8_t d)
 		_delay_ms(1);
 	}
 }
-
-// ------------------------------------------------------------------

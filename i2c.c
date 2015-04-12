@@ -1,8 +1,15 @@
-// ------------------------------------------------------------------
-// --- i2c.c                                                      ---
-// --- library for hardware i2c communication                     ---
-// ---                                    coded by Matej Kogovsek ---
-// ------------------------------------------------------------------
+/**
+
+I2C methods are not interrupt driven - they wait until I2C operation completes.
+If you're using CMT and would prefer switching to another task while I2C operation
+is in progress, you can define I2C_USE_CMT in swdefs.h. This requires CMT_MUTEX_FUNC.
+
+@file		i2c.c
+@brief		I2C master routines
+@author		Matej Kogovsek (matej@hamradio.si)
+@copyright	LGPL 2.1
+@note		This file is part of mat-avr-lib
+*/
 
 #include <inttypes.h>
 #include <avr/io.h>
@@ -23,6 +30,8 @@
 #define I2C_DATA_TX 2
 #define I2C_DATA_RX_NACK 3
 #define I2C_DATA_RX_ACK 4
+
+/** @privatesection */
 
 uint8_t i2cTransfer(uint8_t cmd, uint8_t data)
 {
@@ -45,10 +54,12 @@ uint8_t i2cTransfer(uint8_t cmd, uint8_t data)
 	return TWDR;
 }
 
-// ------------------------------------------------------------------
-// public functions
-// ------------------------------------------------------------------
+/** @publicsection */
 
+/**
+@brief Init I2C
+@param[in]	br		Copied to TWBR
+*/
 void i2c_init(uint8_t br)
 {
 	if( TWCR & _BV(TWEN) ) return;
@@ -71,6 +82,13 @@ uint8_t i2c_present(uint8_t adr)
 }
 */
 
+/**
+@brief Write to I2C
+@param[in]	adr			I2C address
+@param[in]	data		pointer to data
+@param[in]	len			number of bytes to write (len <= sizeof(buf))
+@return 0 on success, non-zero otherwise
+*/
 uint8_t i2c_writebuf(const uint8_t adr, uint8_t* const data, const uint8_t len)
 {
 	#ifdef I2C_USE_CMT
@@ -111,6 +129,13 @@ uint8_t i2c_writebuf(const uint8_t adr, uint8_t* const data, const uint8_t len)
 	return r;
 }
 
+/**
+@brief Read from I2C
+@param[in]	adr			I2C address
+@param[out]	data		pointer to caller allocated buffer for data
+@param[in]	len 		number of bytes to read (len <= sizeof(buf))
+@return 0 on success, non-zero otherwise
+*/
 uint8_t i2c_readbuf(const uint8_t adr, uint8_t* const data, const uint8_t len)
 {
 	#ifdef I2C_USE_CMT

@@ -1,8 +1,14 @@
-// ------------------------------------------------------------------
-// --- rtc_timer2.c                                               ---
-// --- library for software RTC                                   ---
-// ---                                    coded by Matej Kogovsek ---
-// ------------------------------------------------------------------
+/**
+
+RTC implementation with 32kHz crystal on Timer2 pins. Can also be used
+with main crystal, but you need to calculate USEC_PER_TICK.
+
+@file		rtc_timer2.c
+@brief		RTC implementation with AVR async Timer2
+@author		Matej Kogovsek (matej@hamradio.si)
+@copyright	LGPL 2.1
+@note		This file is part of mat-avr-lib
+*/
 
 #include <inttypes.h>
 #include <avr/io.h>
@@ -11,8 +17,6 @@
 #include <avr/pgmspace.h>
 
 #include "time.h"
-
-//#warning Compiling software RTC
 
 const char RTC_IMPL[] PROGMEM = "TMR";
 
@@ -25,7 +29,8 @@ static uint32_t tmr_usec;
 #ifdef RTC_XTAL
 	#define USEC_PER_TICK 15625
 #else
-	#define USEC_PER_TICK 8000
+	#warning RTC using CPU clock
+//	#define USEC_PER_TICK 8000
 #endif
 
 // ------------------------------------------------------------------
@@ -65,7 +70,7 @@ void rtc_stop(void)
 void rtc_init(void)
 {
 	rtc_stop();
-	
+
 	memset(&sw_time, sizeof(sw_time), 0);
 	sw_cal = 0;
 
@@ -95,13 +100,13 @@ void rtc_settime(const struct rtc_t* t)
 {
 	// month_days lookup table guard
 	if( t->mon < 1 || t->mon > 12 ) return;
-	
+
 	uint8_t g = SREG;
 	cli();
 	tmr_usec = 0;
 	memcpy(&sw_time, t, sizeof(sw_time));
 	SREG = g;
-	
+
 	if( 0 == TCCR2B ) { rtc_start(); }
 }
 
@@ -122,10 +127,10 @@ void rtc_setcal(int8_t c)
 // ------------------------------------------------------------------
 
 ISR(TIMER2_COMPA_vect)
-{	
+{
 	tmr_usec += USEC_PER_TICK;
-	
-	if( tmr_usec >= 1000000 ) { 
+
+	if( tmr_usec >= 1000000 ) {
 		tmr_usec -= sw_cal;
 	}
 

@@ -1,7 +1,10 @@
-// ------------------------------------------------------------------
-// --- swi2c.c -bitbang i2c                                       ---
-// ---                                    coded by Matej Kogovsek ---
-// ------------------------------------------------------------------
+/**
+@file		swi2c.c
+@brief		Software (bitbang) I2C.
+@author		Matej Kogovsek (matej@hamradio.si)
+@copyright	LGPL 2.1
+@note		This file is part of mat-avr-lib
+*/
 
 #include <inttypes.h>
 #include <avr/io.h>
@@ -10,13 +13,15 @@
 
 #define i2cDelay asm("nop\nnop\n")
 
+/** @privatesection */
+
 uint8_t i2c_error;
 
 void i2cStart(void)
 {
 	SCL_PORT |= _BV(SCL_BIT);			// make SCL high
 	DDR(SCL_PORT) |= _BV(SCL_BIT);		// make SCL an output
-	
+
 	SDA_PORT |= _BV(SDA_BIT);			// make SDA high
 	DDR(SDA_PORT) |= _BV(SDA_BIT);		// make SDA an output
 
@@ -43,11 +48,11 @@ void i2cStop(void)
 uint8_t i2cPutByte(const uint8_t d)
 {
 	DDR(SDA_PORT) |= _BV(SDA_BIT);		// make SDA an output
-	
+
 	uint8_t i;
 	for( i = 7; i < 8; i-- ) {
 		i2cDelay;
-		if( d & _BV(i) ) {  
+		if( d & _BV(i) ) {
 			SDA_PORT |= _BV(SDA_BIT);
 		} else {
 			SDA_PORT &= ~_BV(SDA_BIT);
@@ -67,7 +72,7 @@ uint8_t i2cPutByte(const uint8_t d)
 	uint8_t r = PIN(SDA_PORT) & _BV(SDA_BIT);	// read ack
 	i2cDelay;
 	SCL_PORT &= ~_BV(SCL_BIT);			// SCL low
-	return r;	
+	return r;
 }  // SCL output and low, SDA input (high by pullup)
 
 // ------------------------------------------------------------------
@@ -76,9 +81,9 @@ uint8_t i2cGetByte(void)
 {
 	uint8_t d = 0;
 	uint8_t i;
-	
+
 	DDR(SDA_PORT) &= ~_BV(SDA_BIT);		// make SDA an input
-	
+
 	for( i = 7; i < 8; i-- ) {
 		i2cDelay;
 		i2cDelay;
@@ -88,7 +93,7 @@ uint8_t i2cGetByte(void)
 		i2cDelay;
 		SCL_PORT &= ~_BV(SCL_BIT);		// SCL low
 	}
-	
+
 	i2cDelay;
 	SDA_PORT &= ~_BV(SDA_BIT);			// SDA low
 	DDR(SDA_PORT) |= _BV(SDA_BIT);		// make SDA an output
@@ -97,13 +102,11 @@ uint8_t i2cGetByte(void)
 	i2cDelay;
 	i2cDelay;
 	SCL_PORT &= ~_BV(SCL_BIT);			// SCL low
-	
+
 	return d;
 }  // SCL output and low, SDA output and low
 
-// ------------------------------------------------------------------
-// public functions
-// ------------------------------------------------------------------
+/** @publicsection */
 
 void i2c_init(uint8_t br)
 {

@@ -1,22 +1,16 @@
-// ------------------------------------------------------------------
-// --- time.c                                                     ---
-// --- library for time conversions                               ---
-// ---                                    coded by Matej Kogovsek ---
-// ------------------------------------------------------------------
-
 #ifndef MAT_TIME_H
 #define MAT_TIME_H
 
 #include <inttypes.h>
 
-struct rtc_t
+struct rtc_t /**< RTC struct */
 {
-	uint8_t sec;	// 0..59
-	uint8_t min;	// 0..59
-	uint8_t hr;		// 0..23
-	uint8_t day;	// 1..31
-	uint8_t mon;	// 1..12
-	uint8_t yr;		// 0..99
+	uint8_t sec;	/**< 0..59 */
+	uint8_t min;	/**< 0..59 */
+	uint8_t hr;		/**< 0..23 */
+	uint8_t day;	/**< 1..31 */
+	uint8_t mon;	/**< 1..12 */
+	uint8_t yr;		/**< 0..99 */
 };
 
 uint32_t rtc_mktime(const struct rtc_t* t);

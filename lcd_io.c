@@ -1,10 +1,15 @@
-// ------------------------------------------------------------------
-// --- lcd_io.c                                                   ---
-// ---                                                            ---
-// --- Library for controlling HD44780 via AVR's IO pins          ---
-// ---                                                            ---
-// ---                                 3.mar.2007, Matej Kogovsek ---
-// ------------------------------------------------------------------
+/**
+
+HD44780 low level driver using AVR IO pins. Define pin mapping in hwdefs.h.
+If you define 8 data pins (LCD_D0 .. LCD_D7), 8 bit interface will be used.
+If you define 4 data pins (LCD_D4 .. LCD_D7), 4 bit interface will be used.
+
+@file		lcd_io.c
+@brief		HD44780 lcd driver via IO pins
+@author		Matej Kogovsek (matej@hamradio.si)
+@copyright	LGPL 2.1
+@note		This file is part of mat-avr-lib
+*/
 
 #include <inttypes.h>
 #include <avr/io.h>

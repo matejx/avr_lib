@@ -1,8 +1,13 @@
-// ------------------------------------------------------------------
-// --- lcd_pcf8574.c                                              ---
-// --- library for controlling the HD44780 via PCF8574            ---
-// ---                                    coded by Matej Kogovsek ---
-// ------------------------------------------------------------------
+/**
+
+HD44780 low level driver using PCF8574 over I2C. Define pin mapping in hwdefs.h.
+
+@file		lcd_pcf8574.c
+@brief		HD44780 lcd driver via PCF8574
+@author		Matej Kogovsek (matej@hamradio.si)
+@copyright	LGPL 2.1
+@note		This file is part of mat-avr-lib
+*/
 
 #include <inttypes.h>
 #include <avr/io.h>
@@ -17,6 +22,8 @@
 
 const uint8_t lcd_busw = 0;
 
+#ifndef PCF_D4
+#warning Using default PCF LCD pin mapping
 #define PCF_D4 _BV(0)
 #define PCF_D5 _BV(1)
 #define PCF_D6 _BV(2)
@@ -25,6 +32,7 @@ const uint8_t lcd_busw = 0;
 #define PCF_RW _BV(5)
 #define PCF_EN _BV(6)
 #define PCF_BL _BV(7)
+#endif
 
 // ------------------------------------------------------------------
 // --- private procedures -------------------------------------------

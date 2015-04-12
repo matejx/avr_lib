@@ -1,8 +1,14 @@
-// ------------------------------------------------------------------
-// --- serialq.c - Basic routines for sending data over USART     ---
-// ---                                                            ---
-// ---                                 8.nov.2009, Matej Kogovsek ---
-// ------------------------------------------------------------------
+/**
+
+All USART data transmission is interrupt driven. Received data is put into a FIFO (provided by circbuf8.c).
+Data to be transmitted is likewise put into a FIFO. Memory for both FIFOs is provided by the caller on init.
+
+@file		serque.c
+@brief		Buffered USART routines
+@author		Matej Kogovsek (matej@hamradio.si)
+@copyright	LGPL 2.1
+@note		This file is part of mat-avr-lib
+*/
 
 #include <inttypes.h>
 #include <avr/io.h>
@@ -51,9 +57,15 @@
 static volatile struct cbuf8_t uart_rxq[2];
 static volatile struct cbuf8_t uart_txq[2];
 
-// ------------------------------------------------------------------
-// initialize serial interface
-
+/**
+@brief Init USART.
+@param[in]	n			USART peripheral number (1..2)
+@param[in]	br			Baudrate (i.e. BAUD_115200 for 115.2k)
+@param[in]	txb			Pointer to caller allocated TX buffer
+@param[in]	txs			sizeof(txb)
+@param[in]	rxb			Pointer to caller allocated RX buffer
+@param[in]	rxs			sizeof(rxs)
+*/
 void ser_init(const uint8_t n, const uint16_t br, uint8_t* txb, uint8_t txs, uint8_t* rxb, uint8_t rxs)
 {
 	cbuf8_clear(&uart_txq[n], txb, txs);
@@ -76,9 +88,10 @@ void ser_init(const uint8_t n, const uint16_t br, uint8_t* txb, uint8_t txs, uin
 	}
 }
 
-// ------------------------------------------------------------------
-// shutdown serial interface
-
+/**
+@brief Deinit USART.
+@param[in]	n			USART peripheral number (1..2)
+*/
 void ser_shutdown(const uint8_t n)
 {
 	if( n ) {
@@ -90,17 +103,20 @@ void ser_shutdown(const uint8_t n)
 	}
 }
 
-// ------------------------------------------------------------------
-// flush rx buffer
-
+/**
+@brief Flush rx buffer.
+@param[in]	n			USART peripheral number (1..2)
+*/
 void ser_flush_rxbuf(const uint8_t n)
 {
 	cbuf8_clear(&uart_rxq[n], uart_rxq[n].buf, uart_rxq[n].size);
 }
 
-// ------------------------------------------------------------------
-// send a byte over the serial intf
-
+/**
+@brief Enqueue a byte to the serial queue for transmission.
+@param[in]	n			USART peripheral number (1..2)
+@param[in]	a			Byte to transmit
+*/
 uint8_t ser_putc(const uint8_t n, const char a)
 {
 	while( !cbuf8_put(&uart_txq[n], a) ) { // put data to queue
@@ -118,17 +134,23 @@ uint8_t ser_putc(const uint8_t n, const char a)
 	return 1;
 }
 
-// ------------------------------------------------------------------
-// get a byte from the serial queue
-
+/**
+@brief Get a byte from the serial queue.
+@param[in]	n			USART peripheral number (1..2)
+@param[out]	d			Pointer to uint8_t where received data is put
+@return Same as cbuf8_get
+*/
 uint8_t ser_getc(const uint8_t n, uint8_t* const d)
 {
 	return cbuf8_get(&uart_rxq[n], d);
 }
 
-// ------------------------------------------------------------------
-// send a string from PGM
 #ifdef SER_NEED_PUTSP
+/**
+@brief Send a string from pgmem.
+@param[in]	n			USART peripheral number (1..2)
+@param[in]	s			Zero terminated string to send
+*/
 void ser_puts_P(const uint8_t n, const PGM_P s)
 {
 	uint8_t c;
@@ -137,9 +159,13 @@ void ser_puts_P(const uint8_t n, const PGM_P s)
 	}
 }
 #endif
-// ------------------------------------------------------------------
-// send a string from memory
+
 #ifdef SER_NEED_PUTS
+/**
+@brief Send a string from memory.
+@param[in]	n			USART peripheral number (1..2)
+@param[in]	s			Zero terminated string to send
+*/
 void ser_puts(const uint8_t n, const char* s)
 {
 	while (*s)	{
@@ -148,8 +174,7 @@ void ser_puts(const uint8_t n, const char* s)
 	}
 }
 #endif
-// ------------------------------------------------------------------
-// write a string with escape sequences
+
 #ifdef SER_NEED_PUTSESC
 void ser_puts_esc(const uint8_t n, const char* s)
 {
@@ -169,9 +194,16 @@ void ser_puts_esc(const uint8_t n, const char* s)
 	}
 }
 #endif
-// ------------------------------------------------------------------
-// send a number in the specified radix
+
 #ifdef SER_NEED_PUTI
+/**
+@brief Send int in the specified radix r of minlen w prepended by char c.
+@param[in]	n			USART peripheral number (1..2)
+@param[in]	a			int
+@param[in]	r			Radix
+@param[in]	w			Min width
+@param[in]	c			Prepending char to achieve min width
+*/
 void ser_puti_lc(const uint8_t n, const uint32_t a, const uint8_t r, uint8_t l, char c)
 {
 	char s[10];
@@ -186,9 +218,14 @@ void ser_puti_lc(const uint8_t n, const uint32_t a, const uint8_t r, uint8_t l, 
 	ser_puts(n, s);
 }
 #endif
-// ------------------------------------------------------------------
-// send a float with prec decimals
+
 #ifdef SER_NEED_PUTF
+/**
+@brief Send float with specified precision.
+@param[in]	n			USART peripheral number (1..2)
+@param[in]	f			float
+@param[in]	prec		Number of decimals
+*/
 void ser_putf(const uint8_t n, float f, uint8_t prec)
 {
 	ser_puti_lc(n, f, 10, 0, 0);
@@ -200,14 +237,21 @@ void ser_putf(const uint8_t n, float f, uint8_t prec)
 	}
 }
 #endif
-// ------------------------------------------------------------------
-// checks whether tx queue is empty
+
 #ifdef SER_NEED_TXDONE
+/**
+@brief Returns true if tx queue is empty, false otherwise.
+@param[in]	n			USART peripheral number (1..2)
+*/
 uint8_t ser_txdone(const uint8_t n)
 {
 	return (uart_txq[n].len == 0);
 }
 #endif
+
+
+/** @privatesection */
+
 // ------------------------------------------------------------------
 // INTERRUPTS
 // ------------------------------------------------------------------

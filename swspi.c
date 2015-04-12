@@ -1,8 +1,13 @@
-// ------------------------------------------------------------------
-// --- swspi.c - bitbang SPI                                      ---
-// ---                                                            ---
-// ---                                16.jan.2014, Matej Kogovsek ---
-// ------------------------------------------------------------------
+/**
+
+Define MOSI_PORT, MOSI_BIT, SCK_PORT, SCK_BIT, MISO_PORT, MISO_BIT and SPI_DELAY_US in swdefs.h
+
+@file		swspi.c
+@brief		Software (bitbang) SPI
+@author		Matej Kogovsek (matej@hamradio.si)
+@copyright	LGPL 2.1
+@note		This file is part of mat-stm32f1-lib
+*/
 
 #include <inttypes.h>
 #include <util/delay.h>
@@ -12,7 +17,7 @@
 void swspi_init(void)
 {
 	DDR(MOSI_PORT) |= _BV(MOSI_BIT);
-	
+
 	DDR(SCK_PORT) |=  _BV(SCK_BIT);
 	SCK_PORT &= ~_BV(SCK_BIT);
 }

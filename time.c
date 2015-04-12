@@ -1,17 +1,19 @@
-// ------------------------------------------------------------------
-// --- time.c                                                     ---
-// --- library for time conversions                               ---
-// ---                                    coded by Matej Kogovsek ---
-// ------------------------------------------------------------------
+/**
+@file		time.c
+@brief		Time functions
+@author		Matej Kogovsek (matej@hamradio.si)
+@copyright	LGPL 2.1
+@note		This file is part of mat-avr-lib
+*/
 
 #include "time.h"
 
-const uint32_t MINUTE = 60;
-const uint32_t HOUR = 3600;
-const uint32_t DAY  = 86400;
-const uint32_t YEAR = 31536000;
+const uint32_t MINUTE = 60; /**< seconds in minute */
+const uint32_t HOUR = 3600; /**< seconds in hour */
+const uint32_t DAY  = 86400; /**< seconds in day */
+const uint32_t YEAR = 31536000; /**< seconds in day */
 
-static uint16_t month[12] = {
+static uint16_t month[12] = { /**< month of day */
 	0,
 	(31),
 	(31+28),
@@ -26,8 +28,11 @@ static uint16_t month[12] = {
 	(31+28+31+30+31+30+31+31+30+31+30)
 };
 
-// ------------------------------------------------------------------
-
+/**
+@brief Convert rtc_t to unix time.
+@param[in]	t		Pointer to rtc_t
+@return Unix time
+*/
 uint32_t rtc_mktime(const struct rtc_t* t)
 {
 	uint32_t r =  946684800;  // 1.1.2000 0:0:0 GMT
@@ -51,8 +56,6 @@ uint32_t rtc_mktime(const struct rtc_t* t)
 	return r;
 }
 
-// ------------------------------------------------------------------
-
 uint8_t rtc_timevalid(const struct rtc_t* t)
 {
 	return (
@@ -63,10 +66,12 @@ uint8_t rtc_timevalid(const struct rtc_t* t)
 		);
 }
 
-// ------------------------------------------------------------------
+const uint8_t month_days[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}; /**< month length */
 
-const uint8_t month_days[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-
+/**
+@brief Increase rtc_t by 1 second
+@param[in]	t		Pointer to rtc_t
+*/
 void rtc_inct(struct rtc_t* t)
 {
 	if( ++t->sec > 59 ) {

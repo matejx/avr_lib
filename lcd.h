@@ -1,9 +1,3 @@
-// ------------------------------------------------------------------
-// --- lcd.h                                                      ---
-// --- library for controlling the HD44780 alphanumeric LCD       ---
-// ---                                    coded by Matej Kogovsek ---
-// ------------------------------------------------------------------
-
 #ifndef MAT_LCD_H
 #define MAT_LCD_H
 

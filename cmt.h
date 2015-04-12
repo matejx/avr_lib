@@ -1,11 +1,5 @@
-// ------------------------------------------------------------------
-// --- cmt.c                                                    ---
-// --- simple cooperative "on-sleep" multitasking                 ---
-// ---                                 8.mar.2011, Matej Kogovsek ---
-// ------------------------------------------------------------------
-
-#ifndef CMT_H
-#define CMT_H
+#ifndef MAT_CMT_H
+#define MAT_CMT_H
 
 #include <inttypes.h>
 
@@ -13,16 +7,16 @@
 
 struct cmt_task
 {
-	uint16_t sp;	// stack pointer
-	uint16_t tp;	// task proc
-	uint16_t d;		// ticks left to sleep
-	uint16_t minsp; // min detected task's SP
+	uint16_t sp;	/**< stack pointer */
+	uint16_t tp;	/**< task proc */
+	uint16_t d;		/**< ticks left to sleep */
+	uint16_t minsp; /**< min detected task's SP */
 };
 
 struct cmt_mutex
 {
-	uint8_t ot;		// owning task
-	uint8_t ac;		// acquire count
+	uint8_t ot;		/**< owning task */
+	uint8_t ac;		/**< acquire count */
 };
 
 void cmt_delay_ticks(uint16_t d);

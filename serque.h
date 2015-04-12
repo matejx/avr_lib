@@ -1,9 +1,3 @@
-// ------------------------------------------------------------------
-// --- serialq.c - Basic routines for sending data over USART     ---
-// ---                                                            ---
-// ---                                 8.nov.2009, Matej Kogovsek ---
-// ------------------------------------------------------------------
-
 #ifndef MAT_SERIALQ_H
 #define MAT_SERIALQ_H
 

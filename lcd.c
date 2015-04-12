@@ -1,8 +1,23 @@
-// ------------------------------------------------------------------
-// --- lcd.c                                                      ---
-// --- library for controlling the HD44780                        ---
-// ---                                    coded by Matej Kogovsek ---
-// ------------------------------------------------------------------
+/**
+
+This is the high level part of HD44780 control. Low level
+driver is implemented elsewhere.
+
+Define LCD_WIDTH and LCD_HEIGHT in swdefs.h.
+
+Define LCD_USE_FB in swdefs.h to use framebuffer. FB skips
+unnecessary LCD writes by keeping a copy of what's on the
+LCD in memory and comparing it with caller requested changes. Recommended.
+
+All provided functions are wrapped in LCD_NEED_func defines
+to keep pgmspace usage low. Define required funcs in swdefs.h
+
+@file		lcd.c
+@brief		HD44780 LCD routines (high level)
+@author		Matej Kogovsek (matej@hamradio.si)
+@copyright	LGPL 2.1
+@note		This file is part of mat-avr-lib
+*/
 
 #include <inttypes.h>
 #include <avr/io.h>
@@ -17,7 +32,7 @@
 // --- procedures implemented by lcd_[intf].c -------------------------
 // ------------------------------------------------------------------
 
-extern const uint8_t lcd_busw;
+extern const uint8_t lcd_busw; /**< Extern variable defined by "driver" specifying used LCD bus width (0 = 4 bit, 0x10 = 8 bit) */
 uint8_t lcd_hwinit(uint8_t p1);
 void lcd_out(uint8_t data, uint8_t rs);
 uint8_t lcd_wr(uint8_t d, uint8_t rs);
@@ -25,9 +40,7 @@ uint8_t lcd_wr(uint8_t d, uint8_t rs);
 #define lcd_cmd(par1) lcd_wr(par1, 0)
 #define lcd_data(par1) lcd_wr(par1, 1)
 
-// ------------------------------------------------------------------
-// --- private procedures -------------------------------------------
-// ------------------------------------------------------------------
+/** @privatesection */
 
 #ifdef LCD_USE_FB
 static char lcd_fb[LCD_HEIGHT*(LCD_WIDTH+1)];
@@ -36,11 +49,11 @@ static uint8_t lcd_fbc;
 
 static uint8_t lcd_cur;
 
-// ------------------------------------------------------------------
-// --- public procedures --------------------------------------------
-// ------------------------------------------------------------------
+/** @publicsection */
 
-// clear lcd
+/**
+@brief Clear LCD.
+*/
 void lcd_clear(void)
 {
 	lcd_cmd(1);
@@ -52,7 +65,9 @@ void lcd_clear(void)
 #endif
 }
 
-// initialize lcd
+/**
+@brief Init LCD.
+*/
 uint8_t lcd_init(uint8_t p1)
 {
 	uint8_t r = lcd_hwinit(p1);
@@ -75,7 +90,11 @@ uint8_t lcd_init(uint8_t p1)
 	return 0;
 }
 
-// position lcd cursor to line y, character x (both zero based)
+/**
+@brief Position LCD cursor.
+@param[in]	x	character (0 based)
+@param[in]	y	line (0 based)
+*/
 void lcd_goto(uint8_t x, uint8_t y)
 {
 #ifdef LCD_USE_FB
@@ -87,13 +106,19 @@ void lcd_goto(uint8_t x, uint8_t y)
 
 }
 
-// position lcd cursor to the beginning of line l (one based)
+/**
+@brief Position LCD cursor to the beginning of line y.
+@param[in]	y	line (1 based)
+*/
 void lcd_line(const uint8_t l)
 {
 	lcd_goto(0, l-1);
 }
 
-// write a char to lcd
+/**
+@brief Write a char.
+@param[in]	c	character to write
+*/
 void lcd_putc(const char c)
 {
 #ifdef LCD_USE_FB
@@ -123,8 +148,12 @@ void lcd_putc(const char c)
 #endif
 }
 
-// write a string from progmem to lcd
+
 #ifdef LCD_NEED_PUTSP
+/**
+@brief Write a string from pgmspace
+@param[in]	s	Zero terminated string
+*/
 void lcd_puts_P(PGM_P s)
 {
 	uint8_t c;
@@ -134,8 +163,10 @@ void lcd_puts_P(PGM_P s)
 }
 #endif
 
-// emulate endl by printing spaces until LCD width is reached
 #ifdef LCD_NEED_ENDL
+/**
+@brief Emulate endl by printing spaces until LCD width is reached.
+*/
 void lcd_endl(void)
 {
 	#ifdef LCD_USE_FB
@@ -154,8 +185,11 @@ void lcd_endl(void)
 }
 #endif
 
-// write a string from mem to lcd
 #ifdef LCD_NEED_PUTS
+/**
+@brief Write a string from memory
+@param[in]	s	Zero terminated string
+*/
 uint8_t lcd_puts(const char* s)
 {
   uint8_t len = 0;
@@ -169,8 +203,12 @@ uint8_t lcd_puts(const char* s)
 }
 #endif
 
-// write a string of length n from mem to lcd
 #ifdef LCD_NEED_PUTSN
+/**
+@brief Write n chars of string from memory
+@param[in]	s	String (zeros are printed as spaces)
+@param[in]	n	Number of characters to write
+*/
 void lcd_putsn(const char* s, uint8_t n)
 {
 	while(n--) {
@@ -184,8 +222,14 @@ void lcd_putsn(const char* s, uint8_t n)
 }
 #endif
 
-// write an integer to lcd, prepending with leading zeros until minlen
 #ifdef LCD_NEED_PUTI
+/**
+@brief Write int in the specified radix r of minlen w prepended by char c.
+@param[in]	a	int
+@param[in]	r	Radix
+@param[in]	l	Min length
+@param[in]	c	Prepending char
+*/
 void lcd_puti_lc(const uint32_t a, uint8_t r, uint8_t l, char c)
 {
 	char s[10];
@@ -201,8 +245,12 @@ void lcd_puti_lc(const uint32_t a, uint8_t r, uint8_t l, char c)
 }
 #endif
 
-// write a float to the lcd with prec decimals
 #ifdef LCD_NEED_PUTF
+/**
+@brief Write float with specified precision.
+@param[in]	f		float
+@param[in]	prec	Number of decimals
+*/
 void lcd_putf(float f, uint8_t prec)
 {
 	lcd_puti_lc(f, 10, 0, 0);

@@ -1,21 +1,48 @@
-// ------------------------------------------------------------------
-// --- cmt.c                                                    ---
-// --- simple cooperative "on-sleep" multitasking                 ---
-// ---                                 8.mar.2011, Matej Kogovsek ---
-// ------------------------------------------------------------------
+/**
+
+Simple cooperative "on-delay" multitasking is achieved with 3 simple steps:
+1. Add tasks to the switching system with cmt_setup_task.
+2. Use a timer interrupt to call cmt_tick periodically.
+3. Within a running task, call cmt_delay_ticks to switch to another task and return after specified ticks.
+
+The logic of this system is to use the CPU cycles you would normally waste in a delay loop to perform other tasks.
+The prerequisite for expected behaviour ofcourse is that tasks spend little time processing and more time delaying.
+If a tasks requests a 5 tick delay and other tasks spend 10 ticks processing, the first task will obviously not be
+returned to in 5 ticks, but 10 ticks. In general, this means a requested delay of X ticks will result in an actual
+delay of X or more ticks. A task that does not wish to wait (but must still cooperate in task switching) can invoke
+task switching without delay by calling cmt_delay_ticks(0).
+
+Any single task project that uses delay loops can be converted to cooperative multi tasking by simply replacing
+non critical delays with cmt_delay_ticks.
+
+There is no mechanism for ending a task once started, so every task is basically one big while(1) loop.
+
+Although mutexes are rarely needed in a cooperative multitasking scenario (since task switching in under
+current task's control), mutex functions are implemented for convenience (and because it was fun to do).
+
+@file		cmt.c
+@brief		Simple cooperative "on-delay" multitasking
+@author		Matej Kogovsek (matej@hamradio.si)
+@copyright	LGPL 2.1
+@note		This file is part of mat-avr-lib
+*/
+
 
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
 
 #include "cmt.h"
 
-static volatile uint8_t cmt_curtask = 0;
-static volatile struct cmt_task cmt_tasks[CMT_MAXTASKS];
-static volatile uint8_t cmt_numtasks = 1;
+static volatile uint8_t cmt_curtask = 0; /**< Currently running task */
+static volatile struct cmt_task cmt_tasks[CMT_MAXTASKS]; /**< Array of task state structs. */
+static volatile uint8_t cmt_numtasks = 1; /**< Number of defined tasks */
 
-// ------------------------------------------------------------------
-// task switching is done here
-// this should not be called with interrupts disabled
+/**
+@brief Delay d ticks.
+
+Task switching is done here. This should not be called with interrupts disabled!
+@param[in]	d		Number of ticks (usually ms) to delay.
+*/
 void cmt_delay_ticks(uint16_t d)
 {
 	asm(
@@ -86,8 +113,12 @@ void cmt_delay_ticks(uint16_t d)
 	);
 }
 
-// ------------------------------------------------------------------
-// setup task, call this to setup all tasks before first sei()
+/**
+@brief Add task to switching logic.
+@param[in]	task_proc		Pointer to task procedure
+@param[in]	task_sp			Task stack pointer
+@return Number of defined tasks. If CMT_MAX_TASKS are already running, returns 0.
+*/
 uint8_t cmt_setup_task(void (*task_proc)(void), uint16_t task_sp)
 {
 	cmt_tasks[0].minsp = -1;	// should be in cmt_init, but can as well be here
@@ -103,8 +134,11 @@ uint8_t cmt_setup_task(void (*task_proc)(void), uint16_t task_sp)
 	return ++cmt_numtasks;
 }
 
-// ------------------------------------------------------------------
-// should be called by a timer interrupt
+/**
+@brief Call within a timer interrupt.
+
+If you want cmt_delay_ticks to mean cmt_delay_ms, simply call this function every ms.
+*/
 void cmt_tick(uint8_t ms)
 {
 	// keep track of current task's min SP
@@ -123,9 +157,14 @@ void cmt_tick(uint8_t ms)
 	}
 }
 
-// ------------------------------------------------------------------
-// returns the task's minimal detected stack pointer
-#ifdef cmt_NEED_MINSP
+#ifdef CMT_NEED_MINSP
+/**
+@brief Returns the task's minimal detected stack pointer.
+
+Used for determining the task's required stack size. Note that the returned value is an approximation.
+@param[in]	task_num	Task number (zero based).
+@return Task's minimal detected stack pointer. If task_num is out of bounds, returns 0.
+*/
 uint16_t cmt_minsp(uint8_t task_num)
 {
 	if( task_num < cmt_numtasks ) {
@@ -135,9 +174,12 @@ uint16_t cmt_minsp(uint8_t task_num)
 }
 #endif
 
-#ifdef cmt_MUTEX_FUNC
-// ------------------------------------------------------------------
-// tries to acquire mutex
+#ifdef CMT_MUTEX_FUNC
+/**
+@brief Tries to acquire mutex.
+@param[in]	m		Pointer to caller allocated cmt_mutex.
+@return True on success (acquired), false otherwise.
+*/
 uint8_t cmt_try_acquire(struct cmt_mutex* m)
 {
 	if( (m->ot == cmt_curtask) || (m->ac == 0) ) {
@@ -148,8 +190,10 @@ uint8_t cmt_try_acquire(struct cmt_mutex* m)
 	return 0;
 }
 
-// ------------------------------------------------------------------
-// waits until mutex acquired
+/**
+@brief Waits until mutex acquired.
+@param[in]	m		Pointer to caller allocated cmt_mutex.
+*/
 void cmt_acquire(struct cmt_mutex* m)
 {
 	while( !cmt_try_acquire(m) ) {
@@ -157,8 +201,10 @@ void cmt_acquire(struct cmt_mutex* m)
 	}
 }
 
-// ------------------------------------------------------------------
-// releases mutex
+/**
+@brief Releases mutex.
+@param[in]	m		Pointer to caller allocated cmt_mutex.
+*/
 void cmt_release(struct cmt_mutex* m)
 {
 	if( (m->ot == cmt_curtask) && (m->ac > 0) ) {
