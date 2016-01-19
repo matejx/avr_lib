@@ -201,7 +201,7 @@ void ser_puts_esc(const uint8_t n, const char* s)
 @param[in]	n			USART peripheral number (1..2)
 @param[in]	a			int
 @param[in]	r			Radix
-@param[in]	w			Min width
+@param[in]	l			Min width
 @param[in]	c			Prepending char to achieve min width
 */
 void ser_puti_lc(const uint8_t n, const uint32_t a, const uint8_t r, uint8_t l, char c)

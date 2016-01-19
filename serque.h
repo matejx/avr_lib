@@ -1,6 +1,10 @@
 #ifndef MAT_SERIALQ_H
 #define MAT_SERIALQ_H
 
+#if F_CPU == 1000000
+	#define BAUD_4800 12
+#endif
+
 #if F_CPU == 3686400
 	#define BAUD_9600 23
 	#define BAUD_19200 11
@@ -14,6 +18,7 @@
 #endif
 
 #if F_CPU == 8000000
+	#define BAUD_4800 103
 	#define BAUD_9600 51
 	#define BAUD_19200 25
 	#define BAUD_38400 12
