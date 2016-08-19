@@ -30,6 +30,14 @@
 	#define BAUD_115200 5
 #endif
 
+#if F_CPU == 14745600
+	#define BAUD_9600 95
+	#define BAUD_19200 47
+	#define BAUD_38400 23
+	#define BAUD_57600 15
+	#define BAUD_115200 7
+#endif
+
 #if F_CPU == 16000000
 	#define BAUD_9600 103
 	#define BAUD_19200 51

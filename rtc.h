@@ -11,5 +11,6 @@ void rtc_gettime(struct rtc_t* t);
 void rtc_settime(const struct rtc_t* t);
 int8_t rtc_getcal(void);
 void rtc_setcal(int8_t c);
+float rtc_gettemp(void);
 
 #endif

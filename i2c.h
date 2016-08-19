@@ -8,6 +8,10 @@
 	#define I2C_50K 72
 #endif
 
+#if F_CPU == 14745600
+	#define I2C_100K 66
+#endif
+
 #if F_CPU == 16000000
 	#define I2C_100K 72
 #endif
