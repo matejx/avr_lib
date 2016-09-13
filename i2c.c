@@ -14,7 +14,7 @@ is in progress, you can define I2C_USE_CMT in swdefs.h. This requires CMT_MUTEX_
 #include <inttypes.h>
 #include <avr/io.h>
 #include <util/twi.h>
-
+#include <util/delay.h>
 #include "swdefs.h"
 
 #ifdef I2C_USE_CMT
@@ -44,7 +44,10 @@ uint8_t i2cTransfer(uint8_t cmd, uint8_t data)
 	TWCR = c;
 
 	if( cmd != I2C_STOP ) {
-		while( !(TWCR & _BV(TWINT)) ) {
+		uint16_t i = 1000;
+		while( --i ) {
+			if( TWCR & _BV(TWINT) ) break;
+			_delay_us(1);
 			#ifdef I2C_USE_CMT
 			cmt_delay_ticks(0);
 			#endif
@@ -71,16 +74,13 @@ void i2c_init(uint8_t br)
 	TWBR = br;
 }
 
-/*
-uint8_t i2c_present(uint8_t adr)
-{
-	i2cTransfer(I2C_START, 0); // always successful (waits for bus)
-	i2cTransfer(I2C_DATA_TX, adr | 1); // slave NACK or lost arb
-	uint8_t r = (TW_STATUS == TW_MT_SLA_ACK);
-	if( TW_STATUS != TW_MT_ARB_LOST ) i2cTransfer(I2C_STOP, 0);
-	return r;
-}
+/**
+@brief Shutdown I2C
 */
+void i2c_shutdown(void)
+{
+	TWCR = 0;
+}
 
 /**
 @brief Write to I2C

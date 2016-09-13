@@ -34,6 +34,14 @@ Also, SS (CS) is not controlled by these methods. It's the responsibility of the
 	#define SPSR0 SPSR
 	#define SPDR0 SPDR
 	#define SPIF0 SPIF
+	#define CPOL0 CPOL
+	#define CPHA0 CPHA
+#endif
+
+#ifdef SPI_PORT
+	#define SCK_DDR DDR(SPI_PORT)
+	#define MOSI_DDR DDR(SPI_PORT)
+	#define MISO_DDR DDR(SPI_PORT)
 #endif
 
 /**
@@ -87,6 +95,32 @@ uint8_t spi_rw(uint8_t d)
 	#endif
 
 	return d;
+}
+
+/**
+@brief Set SPI mode
+@param[in] m	Mode (0..3)
+*/
+void spi_mode(uint8_t m)
+{
+	if( m > 3 ) return;
+
+	uint8_t d = SPCR0 & ~(_BV(CPOL0) | _BV(CPHA0));
+	if( m >= 2 ) d |= _BV(CPOL0);
+	if( m & 1 ) d |= _BV(CPHA0);
+	SPCR0 = d;
+}
+
+/**
+@brief Set SPI speed
+@param[in] fdiv	Clock divider
+*/
+void spi_fdiv(uint8_t fdiv)
+{
+	if( fdiv > 7 ) return;
+
+	SPCR0 = (SPCR0 & ~3) | (fdiv & 3);
+	SPSR0 = (fdiv >> 2) & 1;
 }
 
 // ------------------------------------------------------------------

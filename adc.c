@@ -16,7 +16,11 @@ Interrupt driven. ADC takes ADC_AVG_SAMP (swdefs.h) and returns their average.
 
 static volatile uint16_t adc[8]; /**< Buffer of averaged results for all possible channels */
 static uint8_t adc_nch; /**< Number of channels */
-static uint8_t adc_freerun = 0; /**< Free running yes or no */
+static uint8_t adc_freerun; /**< Free running yes or no */
+static volatile uint8_t adc_valid; /** True after first run completes */
+static volatile uint16_t adc_isum;
+static volatile uint8_t adc_isamp;
+
 
 #ifndef ADC_AVG_SAMP
 #define ADC_AVG_SAMP 16		/**< How many ADC samples to average */
@@ -40,11 +44,23 @@ static uint8_t adc_freerun = 0; /**< Free running yes or no */
 */
 void adc_init(uint8_t nch)
 {
+	adc_valid = 0;
+	adc_isum = 0;
+	adc_isamp = 0;
+	adc_freerun = 0;
 	if( nch > 8 ) nch = 8;
 	adc_nch = nch;
 	ADMUX = _BV(REFS0);	// voltage reference = AVCC with cap on AREF
 	// enable ADC and ADC int, prescaler
 	ADCSRA = _BV(ADEN) | _BV(ADIE) | ADC_PRESCALER;
+}
+
+/**
+@brief Disable ADC.
+*/
+void adc_shutdown(void)
+{
+	ADCSRA = 0;
 }
 
 /**
@@ -75,9 +91,10 @@ void adc_startfree(void)
 */
 uint16_t adc_get(const uint8_t ch)
 {
+	uint16_t r = 0xffff;
 	uint8_t g = SREG;
 	cli();
-	uint16_t r = adc[ch];
+	if( adc_valid ) r = adc[ch];
 	SREG = g;
 	return r;
 }
@@ -86,21 +103,24 @@ uint16_t adc_get(const uint8_t ch)
 
 ISR(ADC_vect)
 {
-	static uint16_t sum = 0;
-	static uint8_t samp = 0;
+	adc_isum += ADC;					// add new conversion result to sum
+	adc_isamp++;						// increase sample counter
 
-	sum += ADC;					    // add new conversion result to sum
-	samp++;						    // increase sample counter
-
-	if( samp == ADC_AVG_SAMP ) {
-		uint8_t n = ADMUX & 7;	    // get channel
-		sum /= ADC_AVG_SAMP;	    // calc average
-		adc[n] = sum;	            // store averaged conversion result
-		if( ++n >= adc_nch ) n = 0;	  // advance channel
+	if( adc_isamp == ADC_AVG_SAMP ) {
+		uint8_t n = ADMUX & 7;		    // get channel
+		adc_isum /= ADC_AVG_SAMP;	    // calc average
+		adc[n] = adc_isum;	            // store averaged conversion result
+		#ifdef ADC_CALLBACK
+		adc_callback(n, adc_isum);
+		#endif
+		if( ++n >= adc_nch ) {			// advance channel
+			n = 0;
+			adc_valid = 1;
+		}
 		ADMUX = _BV(REFS0) | n;
 
-		samp = 0;				    // reset variables
-		sum = 0;
+		adc_isamp = 0;				    // reset variables
+		adc_isum = 0;
 	}
 
 	if( adc_freerun ) {
