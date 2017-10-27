@@ -12,12 +12,12 @@ Interrupt driven. ADC takes ADC_AVG_SAMP (swdefs.h) and returns their average.
 #include <inttypes.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <string.h>
 #include "swdefs.h"
 
 static volatile uint16_t adc[8]; /**< Buffer of averaged results for all possible channels */
-static uint8_t adc_nch; /**< Number of channels */
+static uint8_t adc_ench; /**< Enabled channels */
 static uint8_t adc_freerun; /**< Free running yes or no */
-static volatile uint8_t adc_valid; /** True after first run completes */
 static volatile uint16_t adc_isum;
 static volatile uint8_t adc_isamp;
 
@@ -39,18 +39,18 @@ static volatile uint8_t adc_isamp;
 #endif
 
 /**
-@brief Init ADC. Channels 0 to nch-1 will be sampled.
-@param[in]	nch		Number of channels
+@brief Init ADC.
+@param[in]	ench	Enabled channels (bitmask)
+@param[in]	ref		ADC reference
 */
-void adc_init(uint8_t nch)
+void adc_init(uint8_t ench, uint8_t ref)
 {
-	adc_valid = 0;
+	memset((void*)adc, 0xff, sizeof(adc)); // make all values invalid (0xffff)
 	adc_isum = 0;
 	adc_isamp = 0;
 	adc_freerun = 0;
-	if( nch > 8 ) nch = 8;
-	adc_nch = nch;
-	ADMUX = _BV(REFS0);	// voltage reference = AVCC with cap on AREF
+	adc_ench = ench;
+	ADMUX = ref & (_BV(REFS1) | _BV(REFS0));
 	// enable ADC and ADC int, prescaler
 	ADCSRA = _BV(ADEN) | _BV(ADIE) | ADC_PRESCALER;
 }
@@ -70,7 +70,19 @@ Use if you want to control when conversions are started. Do not call if free run
 */
 void adc_startnext(void)
 {
-	ADCSRA |= _BV(ADSC);
+	if( ADCSRA & _BV(ADSC) ) return;
+
+	if( adc_ench ) {
+		uint8_t n = ADMUX & 7;
+
+		do {
+			n = (n + 1) & 7;
+		} while( (adc_ench & _BV(n)) == 0 );
+
+		ADMUX = (ADMUX & ~7) | n;
+
+		ADCSRA |= _BV(ADSC);
+	}
 }
 
 /**
@@ -91,10 +103,9 @@ void adc_startfree(void)
 */
 uint16_t adc_get(const uint8_t ch)
 {
-	uint16_t r = 0xffff;
 	uint8_t g = SREG;
 	cli();
-	if( adc_valid ) r = adc[ch];
+	uint16_t r = adc[ch];
 	SREG = g;
 	return r;
 }
@@ -113,17 +124,12 @@ ISR(ADC_vect)
 		#ifdef ADC_CALLBACK
 		adc_callback(n, adc_isum);
 		#endif
-		if( ++n >= adc_nch ) {			// advance channel
-			n = 0;
-			adc_valid = 1;
-		}
-		ADMUX = _BV(REFS0) | n;
-
 		adc_isamp = 0;				    // reset variables
 		adc_isum = 0;
-	}
-
-	if( adc_freerun ) {
+		if( adc_freerun ) {				// start next channel
+			adc_startnext();
+		}
+	} else {
 		ADCSRA |= _BV(ADSC);           // start next conversion
 	}
 }

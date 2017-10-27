@@ -71,7 +71,7 @@ void rtc_init(void)
 {
 	rtc_stop();
 
-	memset(&sw_time, sizeof(sw_time), 0);
+	memset(&sw_time, 0, sizeof(sw_time));
 	sw_cal = 0;
 
 	rtc_start();
@@ -86,20 +86,21 @@ uint8_t rtc_getsec(void)
 
 // ------------------------------------------------------------------
 
-void rtc_gettime(struct rtc_t* t)
+uint8_t rtc_gettime(struct rtc_t* t)
 {
 	uint8_t g = SREG;
 	cli();
 	memcpy(t, &sw_time, sizeof(sw_time));
 	SREG = g;
+	return 0;
 }
 
 // ------------------------------------------------------------------
 
-void rtc_settime(const struct rtc_t* t)
+uint8_t rtc_settime(const struct rtc_t* t)
 {
 	// month_days lookup table guard
-	if( t->mon < 1 || t->mon > 12 ) return;
+	if( t->mon < 1 || t->mon > 12 ) return 1;
 
 	uint8_t g = SREG;
 	cli();
@@ -108,6 +109,8 @@ void rtc_settime(const struct rtc_t* t)
 	SREG = g;
 
 	if( 0 == TCCR2B ) { rtc_start(); }
+
+	return 0;
 }
 
 // ------------------------------------------------------------------

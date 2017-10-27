@@ -222,19 +222,46 @@ void ser_puti_lc(const uint8_t n, const uint32_t a, const uint8_t r, uint8_t l, 
 #ifdef SER_NEED_PUTF
 /**
 @brief Send float with specified precision.
+
+This is a naive implementation of ftoa with the primary goal of keeping the code size to a minimum.
+Thus the function has certain limitations, i.e. since the integral part of the argument is cast to
+integer, it must be in int range (+-2 * 10^9). If you need certainty, take a look at dtostrf.
+
 @param[in]	n			USART peripheral number (1..2)
 @param[in]	f			float
 @param[in]	prec		Number of decimals
 */
 void ser_putf(const uint8_t n, float f, uint8_t prec)
 {
+	if( f < 0 ) {
+		f = -f;
+		ser_putc(n, '-');
+	}
 	ser_puti_lc(n, f, 10, 0, 0);
 	ser_putc(n, '.');
-	while( prec-- ) {
-		f = f - (int)f;
-		f = f * 10;
-		ser_puti_lc(n, f, 10, 0, 0);
+	f = f - (int)f;
+	uint8_t i = prec;
+	while( i-- ) f *= 10;
+	ser_puti_lc(n, f, 10, prec, '0');
+}
+#endif
+
+#ifdef SER_NEED_PUTF2
+#include <math.h>
+// takes an extra 100 bytes of code space due to modff
+void ser_putf(const uint8_t n, float f, uint8_t prec)
+{
+	if( f < 0 ) {
+		f = -f;
+		ser_putc(n, '-');
 	}
+	float fi, ff;
+	ff = modff(f, &fi);
+	ser_puti_lc(n, fi, 10, 0, 0);
+	ser_putc(n, '.');
+	uint8_t i = prec;
+	while( i-- ) ff *= 10;
+	ser_puti_lc(n, ff, 10, prec, '0');
 }
 #endif
 

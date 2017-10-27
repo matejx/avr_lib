@@ -3,6 +3,10 @@
 
 #include <inttypes.h>
 
+#if F_CPU == 1000000
+	#define I2C_100K 0
+#endif
+
 #if F_CPU == 8000000
 	#define I2C_100K 32
 	#define I2C_50K 72

@@ -3,7 +3,7 @@
 
 #include <inttypes.h>
 
-void adc_init(uint8_t nch);
+void adc_init(uint8_t ench, uint8_t ref);
 void adc_shutdown(void);
 void adc_startnext(void);
 void adc_startfree(void);
