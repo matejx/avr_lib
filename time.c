@@ -1,7 +1,7 @@
 /**
 @file		time.c
 @brief		Time functions
-@author		Matej Kogovsek (matej@hamradio.si)
+@author		Matej Kogovsek
 @copyright	LGPL 2.1
 @note		This file is part of mat-avr-lib
 */
@@ -59,7 +59,7 @@ uint32_t rtc_mktime(const struct rtc_t* t)
 uint8_t rtc_timevalid(const struct rtc_t* t)
 {
 	return (
-		(t->yr >= 14)&&(t->yr <= 29)&&
+		(t->yr >= 23)&&(t->yr <= 33)&&
 		(t->mon >= 1)&&(t->mon <= 12)&&
 		(t->day >= 1)&&(t->day <= 31)&&
 		(t->hr <= 23)&&(t->min <= 59)&&(t->sec <= 59)

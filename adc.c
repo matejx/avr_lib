@@ -4,7 +4,7 @@ Interrupt driven. ADC takes ADC_AVG_SAMP (swdefs.h) and returns their average.
 
 @file		adc.c
 @brief		ADC routines
-@author		Matej Kogovsek (matej@hamradio.si)
+@author		Matej Kogovsek
 @copyright	LGPL 2.1
 @note		This file is part of mat-avr-lib
 */
@@ -18,8 +18,8 @@ Interrupt driven. ADC takes ADC_AVG_SAMP (swdefs.h) and returns their average.
 static volatile uint16_t adc[8]; /**< Buffer of averaged results for all possible channels */
 static uint8_t adc_ench; /**< Enabled channels */
 static uint8_t adc_freerun; /**< Free running yes or no */
-static volatile uint16_t adc_isum;
-static volatile uint8_t adc_isamp;
+static volatile uint32_t adc_isum;
+static volatile uint16_t adc_isamp;
 
 
 #ifndef ADC_AVG_SAMP

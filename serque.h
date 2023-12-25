@@ -42,6 +42,7 @@
 	#define BAUD_9600 103
 	#define BAUD_19200 51
 	#define BAUD_38400 25
+	#define BAUD_115200 8
 #endif
 
 #include <inttypes.h>

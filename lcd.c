@@ -14,7 +14,7 @@ to keep pgmspace usage low. Define required funcs in swdefs.h
 
 @file		lcd.c
 @brief		HD44780 LCD routines (high level)
-@author		Matej Kogovsek (matej@hamradio.si)
+@author		Matej Kogovsek
 @copyright	LGPL 2.1
 @note		This file is part of mat-avr-lib
 */

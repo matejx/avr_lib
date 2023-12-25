@@ -4,7 +4,7 @@ HD44780 low level driver using PCF8574 over I2C. Define pin mapping in hwdefs.h.
 
 @file		lcd_pcf8574.c
 @brief		HD44780 lcd driver via PCF8574
-@author		Matej Kogovsek (matej@hamradio.si)
+@author		Matej Kogovsek
 @copyright	LGPL 2.1
 @note		This file is part of mat-avr-lib
 */

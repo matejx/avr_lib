@@ -6,7 +6,7 @@ is in progress, you can define I2C_USE_CMT in swdefs.h. This requires CMT_MUTEX_
 
 @file		i2c.c
 @brief		I2C master routines
-@author		Matej Kogovsek (matej@hamradio.si)
+@author		Matej Kogovsek
 @copyright	LGPL 2.1
 @note		This file is part of mat-avr-lib
 */
@@ -23,7 +23,9 @@ is in progress, you can define I2C_USE_CMT in swdefs.h. This requires CMT_MUTEX_
 	struct cmt_mutex i2c_mutex;
 #endif
 
+#ifndef I2C_RETRIES
 #define I2C_RETRIES 10
+#endif
 
 #define I2C_START 0
 #define I2C_STOP 1
@@ -96,7 +98,7 @@ uint8_t i2c_writebuf(const uint8_t adr, uint8_t* const data, const uint8_t len)
 	#endif
 
 	uint8_t retries = I2C_RETRIES;
-	uint8_t r;
+	uint8_t r = 0;
 
 	while( retries-- ) {
 		i2cTransfer(I2C_START, 0); // always successful (waits for bus)
@@ -143,7 +145,7 @@ uint8_t i2c_readbuf(const uint8_t adr, uint8_t* const data, const uint8_t len)
 	#endif
 
 	uint8_t retries = I2C_RETRIES;
-	uint8_t r;
+	uint8_t r = 0;
 
 	while( retries-- ) {
 		i2cTransfer(I2C_START, 0); // always successful (waits for bus)

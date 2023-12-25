@@ -5,7 +5,7 @@ Data to be transmitted is likewise put into a FIFO. Memory for both FIFOs is pro
 
 @file		serque.c
 @brief		Buffered USART routines
-@author		Matej Kogovsek (matej@hamradio.si)
+@author		Matej Kogovsek
 @copyright	LGPL 2.1
 @note		This file is part of mat-avr-lib
 */

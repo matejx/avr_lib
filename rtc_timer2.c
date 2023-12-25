@@ -5,7 +5,7 @@ with main crystal, but you need to calculate USEC_PER_TICK.
 
 @file		rtc_timer2.c
 @brief		RTC implementation with AVR async Timer2
-@author		Matej Kogovsek (matej@hamradio.si)
+@author		Matej Kogovsek
 @copyright	LGPL 2.1
 @note		This file is part of mat-avr-lib
 */

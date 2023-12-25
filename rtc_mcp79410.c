@@ -1,7 +1,7 @@
 /**
 @file		rtc_mcp79410.c
 @brief		RTC implementation with MCP79410
-@author		Matej Kogovsek (matej@hamradio.si)
+@author		Matej Kogovsek
 @copyright	LGPL 2.1
 @note		This file is part of mat-avr-lib
 */

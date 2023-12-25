@@ -8,9 +8,9 @@ Also, SS (CS) is not controlled by these methods. It's the responsibility of the
 
 @file		spi.c
 @brief		SPI routines
-@author		Matej Kogovsek (matej@hamradio.si)
+@author		Matej Kogovsek
 @copyright	LGPL 2.1
-@note		This file is part of mat-stm32f1-lib
+@note		This file is part of mat-avr-lib
 */
 
 #include <inttypes.h>
@@ -32,10 +32,10 @@ Also, SS (CS) is not controlled by these methods. It's the responsibility of the
 	#define SPE0 SPE
 	#define MSTR0 MSTR
 	#define SPSR0 SPSR
-	#define SPDR0 SPDR
 	#define SPIF0 SPIF
 	#define CPOL0 CPOL
 	#define CPHA0 CPHA
+	#define SPDR0 SPDR
 #endif
 
 #ifdef SPI_PORT
@@ -46,11 +46,7 @@ Also, SS (CS) is not controlled by these methods. It's the responsibility of the
 
 /**
 @brief Initialize SPI interface.
-
-Although SPI can have different clock phase and polarity, I have never ran across anything that uses other
-than low polarity and 1st edge phase. Therefore these parameters are implied and not variable. As are 8 bit
-words and MSB first.
-@param[in]	fdiv		Baudrate prescaler, F_CPU dependent
+@param[in]	fdiv		Baudrate prescaler
 */
 void spi_init(uint8_t fdiv)
 {

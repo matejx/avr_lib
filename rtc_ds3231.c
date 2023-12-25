@@ -1,7 +1,7 @@
 /**
 @file		rtc_ds3231.c
 @brief		RTC implementation with DS3231
-@author		Matej Kogovsek (matej@hamradio.si)
+@author		Matej Kogovsek
 @copyright	LGPL 2.1
 @note		This file is part of mat-avr-lib
 */

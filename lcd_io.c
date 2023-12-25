@@ -6,7 +6,7 @@ If you define 4 data pins (LCD_D4 .. LCD_D7), 4 bit interface will be used.
 
 @file		lcd_io.c
 @brief		HD44780 lcd driver via IO pins
-@author		Matej Kogovsek (matej@hamradio.si)
+@author		Matej Kogovsek
 @copyright	LGPL 2.1
 @note		This file is part of mat-avr-lib
 */
